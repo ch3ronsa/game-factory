@@ -103,118 +103,124 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
 
     // Bundle SDK for iframe injection
     const getSDKBundle = () => {
-        // Simplified inline version with Remix support
         return `
-            class SimpleSDK {
+            // Simplified Game Factory SDK
+            class GameFactorySDK {
                 constructor() {
-                    this.score = {
-                        current: 0,
-                        send: async (data) => {
-                            this.score.current = data.value;
-                            window.parent.postMessage({ type: 'SCORE_SUBMIT', data }, '*');
-                            return true;
-                        }
-                    };
-                    
-                    this.lifecycle = {
-                        start: async () => {
-                            window.parent.postMessage({ type: 'GAME_START' }, '*');
-                        },
-                        finish: async (score) => {
-                            window.parent.postMessage({ type: 'GAME_END', data: { score } }, '*');
-                        }
-                    };
-                    
-                    // Remix: Schema Module
-                    this.schema = {
-                        properties: [],
-                        values: new Map(),
-                        callbacks: new Set(),
-                        
-                        defineSchema: (props) => {
-                            this.schema.properties = props;
-                            props.forEach(p => this.schema.values.set(p.key, p.defaultValue));
-                            window.parent.postMessage({ 
-                                type: 'SCHEMA_DEFINED', 
-                                data: { schema: { properties: props }, currentValues: Object.fromEntries(this.schema.values) }
-                            }, '*');
-                        },
-                        
-                        getValue: (key) => this.schema.values.get(key),
-                        
-                        onUpdate: (callback) => {
-                            this.schema.callbacks.add(callback);
-                            return () => this.schema.callbacks.delete(callback);
-                        },
-                        
-                        _updateValue: (key, value) => {
-                            this.schema.values.set(key, value);
-                            this.schema.callbacks.forEach(cb => cb(key, value));
-                        }
-                    };
-                    
-                    // Remix: Assets Module
-                    this.assets = {
-                        map: new Map(),
-                        preloaded: new Map(),
-                        
-                        mapAssets: (mappings) => {
-                            mappings.forEach(m => this.assets.map.set(m.originalUrl, m.remixUrl));
-                            window.parent.postMessage({ 
-                                type: 'ASSETS_MANIFEST', 
-                                data: { assets: mappings }
-                            }, '*');
-                        },
-                        
-                        getAssetUrl: (originalUrl) => {
-                            return this.assets.map.get(originalUrl) || originalUrl;
-                        },
-                        
-                        loadImage: async (originalUrl) => {
-                            const url = this.assets.getAssetUrl(originalUrl);
-                            if (this.assets.preloaded.has(url)) {
-                                return this.assets.preloaded.get(url);
-                            }
-                            return new Promise((resolve, reject) => {
-                                const img = new Image();
-                                img.onload = () => {
-                                    this.assets.preloaded.set(url, img);
-                                    resolve(img);
-                                };
-                                img.onerror = reject;
-                                img.src = url;
+                    this.vars = {};
+                    this.updateCallback = () => {};
+                    this.score = 0;
+                    this.isReady = false;
+                    this.initMessageListener();
+                }
+
+                // 1. REGISTER REMIX VARIABLES
+                registerRemix(defaultVars) {
+                    this.vars = defaultVars;
+                    this.sendMessage("REGISTER_SCHEMA", defaultVars);
+                    console.log('[SDK] Remix registered:', defaultVars);
+                }
+
+                // 2. LISTEN FOR UPDATES
+                onRemixUpdate(callback) {
+                    this.updateCallback = callback;
+                }
+
+                // 3. GET VARIABLE
+                getVar(key) {
+                    return this.vars[key];
+                }
+
+                // 4. GET ALL VARIABLES
+                getAllVars() {
+                    return { ...this.vars };
+                }
+
+                // 5. SUBMIT SCORE
+                submitScore(score) {
+                    this.score = score;
+                    this.sendMessage("SUBMIT_SCORE", { score });
+                    console.log('[SDK] Score:', score);
+                }
+
+                // 6. LIFECYCLE - Ready
+                gameReady() {
+                    this.isReady = true;
+                    this.sendMessage("GAME_READY", true);
+                    console.log('[SDK] Ready');
+                }
+
+                // 7. LIFECYCLE - Start
+                gameStart() {
+                    this.sendMessage("GAME_START", true);
+                    console.log('[SDK] Started');
+                }
+
+                // 8. LIFECYCLE - End
+                gameEnd(finalScore) {
+                    const scoreToSubmit = finalScore ?? this.score;
+                    this.sendMessage("GAME_END", { score: scoreToSubmit });
+                    console.log('[SDK] Ended:', scoreToSubmit);
+                }
+
+                // INTERNAL: Send message
+                sendMessage(type, payload) {
+                    try {
+                        window.parent.postMessage({ type, payload }, "*");
+                    } catch (e) {
+                        console.error('[SDK] Message failed:', e);
+                    }
+                }
+
+                // INTERNAL: Listen for messages
+                initMessageListener() {
+                    window.addEventListener("message", (event) => {
+                        const { type, payload } = event.data || {};
+
+                        if (type === "UPDATE_REMIX") {
+                            this.vars = { ...this.vars, ...payload };
+                            this.updateCallback(this.vars);
+                            console.log('[SDK] Updated:', payload);
+                        } else if (type === "REQUEST_STATE") {
+                            this.sendMessage("STATE_RESPONSE", {
+                                vars: this.vars,
+                                score: this.score,
+                                isReady: this.isReady
                             });
-                        }
-                    };
-                    
-                    // Setup message listener for parent updates
-                    window.addEventListener('message', (event) => {
-                        if (event.data?.type === 'UPDATE_VARIABLE') {
-                            const { key, value } = event.data.data || {};
-                            if (key) this.schema._updateValue(key, value);
-                        } else if (event.data?.type === 'UPDATE_ASSETS') {
-                            const mappings = event.data.data?.mappings || [];
-                            this.assets.mapAssets(mappings);
+                        } else if (type === "RESET_GAME") {
+                            this.score = 0;
+                            console.log('[SDK] Reset');
                         }
                     });
                 }
-                
-                async init() {
-                    window.parent.postMessage({ type: 'SDK_READY' }, '*');
-                }
             }
-            const SDK = new SimpleSDK();
+
+            // Create singleton
+            const SDK = new GameFactorySDK();
+            window.SDK = SDK;
         `;
     };
 
     const getFarcadeShim = () => {
         return `
-            // Farcade compatibility shim
+            // Farcade compatibility shim (uses simplified SDK)
             window.farcade = {
-                init: () => SDK.init(),
-                gameStart: () => SDK.lifecycle.start(),
-                gameEnd: (score) => SDK.lifecycle.finish(score),
-                submitScore: (score) => SDK.score.send({ value: score }),
+                init: () => {
+                    SDK.gameReady();
+                    return Promise.resolve();
+                },
+                gameStart: () => {
+                    SDK.gameStart();
+                    return Promise.resolve();
+                },
+                gameEnd: (score) => {
+                    SDK.gameEnd(score);
+                    return Promise.resolve();
+                },
+                submitScore: (score) => {
+                    SDK.submitScore(score);
+                    return Promise.resolve(true);
+                },
                 getAssets: () => Promise.resolve([])
             };
         `;

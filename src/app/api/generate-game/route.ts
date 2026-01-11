@@ -14,7 +14,7 @@ JSON Formatı:
   "visualStyle": "Görsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
   "startingScene": "Oyunun başlangıç sahnesinin atmosferik betimlemesi",
   "playerActions": ["Saldır", "Kaç", "Keşfet" gibi oyunun başlangıcında yapılabilecek 3 eylem],
-  "gameCode": "TAM OYNANABILIR p5.js KODU. ÖNEMLI SDK KURALLARI: 1) Oyun başında 'await SDK.init()' çağır (async setup kullan). 2) Oyun başladığında 'await SDK.lifecycle.start()' çağır. 3) Oyun bittiğinde 'await SDK.lifecycle.finish(score)' çağır. 4) Skor göndermek için 'await SDK.score.send({ value: score })' kullan. 5) Sadece saf JavaScript kodu yaz, HTML tagları OLMASIN. 6) setup() ve draw() fonksiyonlarını mutlaka içermeli. 7) Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap ve windowResized() fonksiyonunu ekle. SDK global olarak 'window.SDK' üzerinden erişilebilir."
+  "gameCode": "TAM OYNANABILIR p5.js KODU. SDK KULLANIMI: 1) Oyun başında SDK.registerRemix({ playerSpeed: 5, gravity: 0.5 }) ile remix edilebilir değişkenleri tanımla. 2) SDK.onRemixUpdate((vars) => { playerSpeed = vars.playerSpeed; }) ile değişiklikleri dinle. 3) SDK.getVar('playerSpeed') ile değişken değerlerini al. 4) SDK.gameReady() ile oyunun hazır olduğunu bildir. 5) SDK.gameStart() ile oyunu başlat. 6) SDK.submitScore(score) ile skor gönder. 7) SDK.gameEnd(finalScore) ile oyunu bitir. 8) Sadece saf JavaScript kodu yaz, HTML tagları OLMASIN. 9) setup() ve draw() fonksiyonlarını mutlaka içermeli. 10) Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap. SDK global olarak 'window.SDK' üzerinden erişilebilir."
 }
 
 ÖNEMLİ: SADECE geçerli JSON döndür, başka hiçbir açıklama veya metin ekleme. gameCode alanına p5.js CDN linki ekleme, sadece JavaScript kodu yaz.`;
