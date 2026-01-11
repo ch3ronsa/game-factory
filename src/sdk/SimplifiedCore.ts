@@ -65,6 +65,31 @@ class GameFactorySDK {
     }
 
     /**
+     * 5b. ADD TO SCORE (Convenience)
+     */
+    public addScore(value: number): number {
+        this.score += value;
+        console.log('[SDK] Score added:', value, '-> Total:', this.score);
+        return this.score;
+    }
+
+    /**
+     * 5c. SET SCORE (Convenience)
+     */
+    public setScore(value: number): void {
+        this.score = value;
+        console.log('[SDK] Score set:', value);
+    }
+
+    /**
+     * 5d. GET CURRENT SCORE
+     */
+    public getScore(): number {
+        return this.score;
+    }
+
+
+    /**
      * 6. GAME LIFECYCLE - Ready
      */
     public gameReady(): void {

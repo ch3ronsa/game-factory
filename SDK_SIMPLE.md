@@ -94,6 +94,31 @@ Submit player's score.
 SDK.submitScore(1000);
 ```
 
+### SDK.addScore(value)
+
+Add to current score (convenience method).
+
+```javascript
+SDK.addScore(100);  // Adds 100 to current score
+const total = SDK.addScore(50);  // Returns new total
+```
+
+### SDK.setScore(value)
+
+Set score directly (convenience method).
+
+```javascript
+SDK.setScore(500);  // Sets score to 500
+```
+
+### SDK.getScore()
+
+Get current score.
+
+```javascript
+const currentScore = SDK.getScore();
+```
+
 ### SDK.gameReady()
 
 Tell the platform your game is ready to play.

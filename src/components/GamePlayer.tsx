@@ -143,6 +143,25 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                     console.log('[SDK] Score:', score);
                 }
 
+                // 5b. ADD TO SCORE
+                addScore(value) {
+                    this.score += value;
+                    console.log('[SDK] Score added:', value, '-> Total:', this.score);
+                    return this.score;
+                }
+
+                // 5c. SET SCORE
+                setScore(value) {
+                    this.score = value;
+                    console.log('[SDK] Score set:', value);
+                }
+
+                // 5d. GET SCORE
+                getScore() {
+                    return this.score;
+                }
+
+
                 // 6. LIFECYCLE - Ready
                 gameReady() {
                     this.isReady = true;

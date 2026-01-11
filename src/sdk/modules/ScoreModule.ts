@@ -79,6 +79,36 @@ export class ScoreModule {
     }
 
     /**
+     * Add to current score
+     */
+    add(value: number): number {
+        this.currentScore += value;
+        this.log('Score added:', value, '-> Total:', this.currentScore);
+
+        // Auto-update high score
+        if (this.currentScore > this.highScore) {
+            this.highScore = this.currentScore;
+            this.saveHighScore();
+        }
+
+        return this.currentScore;
+    }
+
+    /**
+     * Set score directly
+     */
+    set(value: number): void {
+        this.currentScore = value;
+        this.log('Score set:', value);
+
+        if (value > this.highScore) {
+            this.highScore = value;
+            this.saveHighScore();
+        }
+    }
+
+
+    /**
      * Wait for parent window acknowledgment
      */
     private waitForAcknowledgment(timeout: number): Promise<boolean> {

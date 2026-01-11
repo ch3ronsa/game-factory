@@ -48,6 +48,24 @@ export default function SDKTest() {
                         setScore(score);
                     },
 
+                    addScore(value: number) {
+                        this.score += value;
+                        addLog(`➕ addScore(${value}) -> Total: ${this.score}`);
+                        setScore(this.score);
+                        return this.score;
+                    },
+
+                    setScore(value: number) {
+                        this.score = value;
+                        addLog(`📝 setScore(${value})`);
+                        setScore(value);
+                    },
+
+                    getScore() {
+                        addLog(`📖 getScore() = ${this.score}`);
+                        return this.score;
+                    },
+
                     gameReady() {
                         addLog('🎮 gameReady() called');
                     },
@@ -84,19 +102,20 @@ export default function SDKTest() {
 
                 // 4. Submit some scores
                 setTimeout(() => {
-                    mockSDK.submitScore(100);
+                    mockSDK.addScore(100);
                 }, 1000);
 
                 setTimeout(() => {
-                    mockSDK.submitScore(250);
+                    mockSDK.addScore(150); // Total: 250
                 }, 2000);
 
                 setTimeout(() => {
-                    mockSDK.submitScore(500);
+                    mockSDK.addScore(250); // Total: 500
                 }, 3000);
 
                 setTimeout(() => {
-                    mockSDK.gameEnd(500);
+                    const finalScore = mockSDK.getScore();
+                    mockSDK.gameEnd(finalScore);
                 }, 4000);
 
                 // 5. Test variable access
