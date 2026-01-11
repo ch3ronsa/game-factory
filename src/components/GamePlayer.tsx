@@ -23,22 +23,35 @@ interface GamePlayerProps {
 }
 
 export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerProps) {
-    const [gameState, setGameState] = useState<'intro' | 'playing' | 'event'>('intro');
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
-    const [currentScene, setCurrentScene] = useState(gameData.startingScene);
     const [health, setHealth] = useState(100);
     const [energy, setEnergy] = useState(100);
     const [mETH, setmETH] = useState(0);
 
     useEffect(() => {
         setLogs([`INITIALIZING: ${gameData.gameName}`, `CLASS: ${gameData.genre}`, `VISUALS: ${gameData.visualStyle}`]);
+
+        // Validate gameCode
+        if (!gameData.gameCode || gameData.gameCode.trim() === '') {
+            setHasError(true);
+            setIsLoading(false);
+            return;
+        }
+
+        // Simulate loading time for iframe initialization
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1500);
+
+        return () => clearTimeout(timer);
     }, [gameData]);
 
     const handleAction = (action: string) => {
         const newLog = `> ${action} executed`;
         setLogs(prev => [newLog, ...prev].slice(0, 6));
 
-        // Random outcome simulations for visual feedback
         const outcome = Math.random();
         if (outcome > 0.7) {
             setmETH(prev => prev + 0.1);
@@ -51,91 +64,155 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
         setEnergy(prev => Math.max(0, prev - 5));
     };
 
+    const generateIframeSrcDoc = () => {
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: #000; 
+        }
+        canvas { 
+            display: block; 
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.js"></script>
+</head>
+<body>
+    <script>
+        ${gameData.gameCode}
+    </script>
+</body>
+</html>`;
+    };
+
     return (
         <div className={`flex flex-col h-full w-full bg-[#050505] ${!isInline ? 'relative' : ''}`}>
-            {/* GAME CANVAS */}
-            <div className={`relative flex-1 bg-black overflow-hidden flex flex-col justify-center items-center ${isInline ? 'rounded-b-2xl' : ''}`}>
+            {/* GAME CANVAS - 16:9 Aspect Ratio with Mantle Neon Glow */}
+            <div className={`relative flex-1 flex flex-col justify-center items-center p-4 ${isInline ? '' : 'p-8'}`}>
 
-                {/* 1. The Rendering Layer (Iframe) */}
-                {gameData.gameCode ? (
-                    <iframe
-                        srcDoc={`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <meta charset="utf-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-                                <style>
-                                    body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-                                    canvas { display: block; }
-                                </style>
-                            </head>
-                            <body>
-                                <script>
-                                    ${gameData.gameCode}
-                                </script>
-                            </body>
-                            </html>
-                        `}
-                        className="absolute inset-0 w-full h-full border-0 opacity-80 mix-blend-screen"
-                        title={`${gameData.gameName}`}
-                        sandbox="allow-scripts"
-                    />
-                ) : (
-                    <div className="text-center opacity-30">
-                        <div className="w-16 h-16 border border-white/20 rounded mb-4 animate-spin mx-auto"></div>
-                        <p className="font-mono text-xs tracking-widest text-white">RENDER ENGINE OFFLINE</p>
-                    </div>
-                )}
+                {/* 16:9 Container with Neon Glow */}
+                <div className="relative w-full max-w-6xl aspect-video">
+                    {/* Mantle Neon Glow Effect */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-cyan-500 to-purple-600 rounded-2xl blur-xl opacity-75 animate-pulse"></div>
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-cyan-400 to-purple-500 rounded-2xl blur-md opacity-50"></div>
 
-                {/* 2. Sleek Overlays (HP/Energy) */}
-                <div className="absolute top-4 left-6 right-6 flex justify-between items-start pointer-events-none z-10">
+                    {/* Game Container */}
+                    <div className="relative bg-black rounded-2xl overflow-hidden border border-purple-500/30 shadow-2xl h-full">
 
-                    {/* Status Bars */}
-                    <div className="flex flex-col gap-2 w-48">
-                        {/* HP */}
-                        <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
-                            <motion.div
-                                animate={{ width: `${health}%` }}
-                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-400"
+                        {/* Loading State */}
+                        {isLoading && (
+                            <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6">
+                                <div className="relative">
+                                    {/* Animated Rings */}
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                        className="w-24 h-24 border-4 border-transparent border-t-purple-500 border-r-cyan-500 rounded-full"
+                                    />
+                                    <motion.div
+                                        animate={{ rotate: -360 }}
+                                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                        className="absolute inset-2 w-20 h-20 border-4 border-transparent border-b-purple-400 border-l-cyan-400 rounded-full"
+                                    />
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                        className="absolute inset-4 w-16 h-16 border-4 border-transparent border-t-purple-300 border-r-cyan-300 rounded-full"
+                                    />
+                                </div>
+                                <div className="text-center space-y-2">
+                                    <h3 className="text-xl font-bold text-white tracking-tight">Loading Game Engine</h3>
+                                    <p className="text-sm text-purple-400 font-mono animate-pulse">Initializing Farcade SDK...</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Error State */}
+                        {hasError && !isLoading && (
+                            <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6 p-8">
+                                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border-2 border-red-500/30">
+                                    <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div className="text-center space-y-2 max-w-md">
+                                    <h3 className="text-xl font-bold text-red-400">Game Code Missing</h3>
+                                    <p className="text-sm text-gray-400 font-mono">
+                                        The AI-generated game code is empty or invalid. Please try generating a new game.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Game Iframe */}
+                        {!hasError && gameData.gameCode && (
+                            <iframe
+                                srcDoc={generateIframeSrcDoc()}
+                                className="absolute inset-0 w-full h-full border-0"
+                                title={`${gameData.gameName}`}
+                                sandbox="allow-scripts"
+                                onLoad={() => setIsLoading(false)}
                             />
-                        </div>
-                        <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest pl-1">Hull Integrity {health}%</span>
+                        )}
 
-                        {/* Energy */}
-                        <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
-                            <motion.div
-                                animate={{ width: `${energy}%` }}
-                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400"
-                            />
-                        </div>
-                        <span className="text-[10px] font-mono font-bold text-cyan-500 uppercase tracking-widest pl-1">Energy Cells {energy}%</span>
-                    </div>
+                        {/* Overlays (HP/Energy) - Only show when game is loaded */}
+                        {!isLoading && !hasError && (
+                            <div className="absolute top-4 left-6 right-6 flex justify-between items-start pointer-events-none z-10">
+                                {/* Status Bars */}
+                                <div className="flex flex-col gap-2 w-48">
+                                    {/* HP */}
+                                    <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
+                                        <motion.div
+                                            animate={{ width: `${health}%` }}
+                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-400"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest pl-1">Hull Integrity {health}%</span>
 
-                    {/* Currency / Score */}
-                    <div className="flex items-center gap-3 bg-black/40 backdrop-blur border border-white/10 px-4 py-2 rounded-lg">
-                        <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"></div>
-                        <span className="font-mono text-lg font-bold text-gray-200">{mETH.toFixed(2)}</span>
-                        <span className="font-mono text-xs text-gray-500">mETH</span>
+                                    {/* Energy */}
+                                    <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
+                                        <motion.div
+                                            animate={{ width: `${energy}%` }}
+                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold text-cyan-500 uppercase tracking-widest pl-1">Energy Cells {energy}%</span>
+                                </div>
+
+                                {/* Currency / Score */}
+                                <div className="flex items-center gap-3 bg-black/40 backdrop-blur border border-white/10 px-4 py-2 rounded-lg">
+                                    <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"></div>
+                                    <span className="font-mono text-lg font-bold text-gray-200">{mETH.toFixed(2)}</span>
+                                    <span className="font-mono text-xs text-gray-500">mETH</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Close Button (If Modal) */}
+                        {!isInline && (
+                            <button
+                                onClick={onClose}
+                                className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-white/10 border border-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 </div>
-
-                {/* Close Button (If Modal) */}
-                {!isInline && (
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-white/10 border border-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                    >
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                )}
             </div>
 
             {/* CONTROLLER AREA (Below Canvas) */}
             <div className="bg-[#0f0f11] border-t border-white/5 p-6 z-20">
                 <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-
                     {/* Logs Terminal */}
                     <div className="w-full md:w-64 h-24 bg-black/40 border border-white/5 rounded-lg p-3 font-mono text-[10px] text-green-400 overflow-hidden flex flex-col justify-end">
                         <AnimatePresence>
@@ -154,12 +231,10 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                             <button
                                 key={i}
                                 onClick={() => handleAction(action)}
-                                disabled={energy < 5 || health <= 0}
+                                disabled={energy < 5 || health <= 0 || isLoading || hasError}
                                 className="group relative w-32 h-16 bg-[#1a1a1d] hover:bg-[#252529] border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 active:border-purple-500/50 disabled:opacity-30 disabled:pointer-events-none"
                             >
-                                {/* Button Top Glow */}
                                 <div className="absolute top-0 inset-x-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
                                 <span className="font-bold text-gray-200 text-sm">{action}</span>
                                 <span className="text-[9px] font-mono text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-wider">Button {['A', 'B', 'X'][i]}</span>
                             </button>

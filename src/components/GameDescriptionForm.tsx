@@ -228,7 +228,7 @@ export function GameDescriptionForm() {
             <div className={`lg:col-span-7 relative bg-[#050505] rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-700 ${isGenerating ? 'ring-2 ring-purple-500/50' : ''}`}>
 
                 {/* Status Bar */}
-                <div className="h-14 border-b border-white/5 bg-white/[0.02] flex items-center justify-between px-6">
+                <div className="h-14 border-b border-white/5 bg-white/[0.02] flex items-center justify-center px-6">
                     <div className="flex items-center gap-3">
                         <div className={`relative w-2 h-2 rounded-full ${gameData ? 'bg-emerald-500' : (isGenerating ? 'bg-yellow-500 animate-pulse' : 'bg-red-500')}`}>
                             {gameData && <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>}
@@ -239,7 +239,7 @@ export function GameDescriptionForm() {
                     </div>
 
                     {gameData && (
-                        <div className="flex gap-2">
+                        <div className="absolute right-6 flex gap-2">
                             <button onClick={handleMint} disabled={isMinting} className="h-8 px-4 flex items-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded text-[10px] font-bold text-purple-300 uppercase tracking-wide transition-colors">
                                 {isMinting ? 'Deploying...' : 'Deploy to Chain'}
                             </button>
