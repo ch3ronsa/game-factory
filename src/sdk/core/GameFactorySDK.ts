@@ -1,19 +1,25 @@
 import { SDKConfig } from './types';
 import { ScoreModule } from '../modules/ScoreModule';
 import { LifecycleModule } from '../modules/LifecycleModule';
+import { SchemaModule } from '../modules/SchemaModule';
+import { AssetsModule } from '../modules/AssetsModule';
 
 /**
  * Game Factory SDK - Singleton Core Class
- * Provides modular game development utilities
+ * Provides modular game development utilities with Remix.gg support
  */
 export class GameFactorySDK {
     private static instance: GameFactorySDK | null = null;
     private initialized: boolean = false;
     private config: SDKConfig;
 
-    // Modules
+    // Core Modules
     public readonly score: ScoreModule;
     public readonly lifecycle: LifecycleModule;
+
+    // Remix Modules
+    public readonly schema: SchemaModule;
+    public readonly assets: AssetsModule;
 
     private constructor(config: SDKConfig = {}) {
         this.config = {
@@ -22,11 +28,13 @@ export class GameFactorySDK {
             ...config,
         };
 
-        // Initialize modules
+        // Initialize all modules
         this.score = new ScoreModule(this.config.debug);
         this.lifecycle = new LifecycleModule(this.config.debug);
+        this.schema = new SchemaModule(this.config.debug);
+        this.assets = new AssetsModule(this.config.debug);
 
-        this.log('SDK instance created');
+        this.log('SDK instance created with Remix support');
     }
 
     /**

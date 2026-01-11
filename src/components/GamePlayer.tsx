@@ -103,8 +103,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
 
     // Bundle SDK for iframe injection
     const getSDKBundle = () => {
-        // In production, this would be a bundled version
-        // For now, we'll use a simplified inline version
+        // Simplified inline version with Remix support
         return `
             class SimpleSDK {
                 constructor() {
@@ -116,6 +115,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                             return true;
                         }
                     };
+                    
                     this.lifecycle = {
                         start: async () => {
                             window.parent.postMessage({ type: 'GAME_START' }, '*');
@@ -124,7 +124,81 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                             window.parent.postMessage({ type: 'GAME_END', data: { score } }, '*');
                         }
                     };
+                    
+                    // Remix: Schema Module
+                    this.schema = {
+                        properties: [],
+                        values: new Map(),
+                        callbacks: new Set(),
+                        
+                        defineSchema: (props) => {
+                            this.schema.properties = props;
+                            props.forEach(p => this.schema.values.set(p.key, p.defaultValue));
+                            window.parent.postMessage({ 
+                                type: 'SCHEMA_DEFINED', 
+                                data: { schema: { properties: props }, currentValues: Object.fromEntries(this.schema.values) }
+                            }, '*');
+                        },
+                        
+                        getValue: (key) => this.schema.values.get(key),
+                        
+                        onUpdate: (callback) => {
+                            this.schema.callbacks.add(callback);
+                            return () => this.schema.callbacks.delete(callback);
+                        },
+                        
+                        _updateValue: (key, value) => {
+                            this.schema.values.set(key, value);
+                            this.schema.callbacks.forEach(cb => cb(key, value));
+                        }
+                    };
+                    
+                    // Remix: Assets Module
+                    this.assets = {
+                        map: new Map(),
+                        preloaded: new Map(),
+                        
+                        mapAssets: (mappings) => {
+                            mappings.forEach(m => this.assets.map.set(m.originalUrl, m.remixUrl));
+                            window.parent.postMessage({ 
+                                type: 'ASSETS_MANIFEST', 
+                                data: { assets: mappings }
+                            }, '*');
+                        },
+                        
+                        getAssetUrl: (originalUrl) => {
+                            return this.assets.map.get(originalUrl) || originalUrl;
+                        },
+                        
+                        loadImage: async (originalUrl) => {
+                            const url = this.assets.getAssetUrl(originalUrl);
+                            if (this.assets.preloaded.has(url)) {
+                                return this.assets.preloaded.get(url);
+                            }
+                            return new Promise((resolve, reject) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    this.assets.preloaded.set(url, img);
+                                    resolve(img);
+                                };
+                                img.onerror = reject;
+                                img.src = url;
+                            });
+                        }
+                    };
+                    
+                    // Setup message listener for parent updates
+                    window.addEventListener('message', (event) => {
+                        if (event.data?.type === 'UPDATE_VARIABLE') {
+                            const { key, value } = event.data.data || {};
+                            if (key) this.schema._updateValue(key, value);
+                        } else if (event.data?.type === 'UPDATE_ASSETS') {
+                            const mappings = event.data.data?.mappings || [];
+                            this.assets.mapAssets(mappings);
+                        }
+                    });
                 }
+                
                 async init() {
                     window.parent.postMessage({ type: 'SDK_READY' }, '*');
                 }
