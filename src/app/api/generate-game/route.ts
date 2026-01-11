@@ -14,7 +14,7 @@ JSON Formatı:
   "visualStyle": "Görsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
   "startingScene": "Oyunun başlangıç sahnesinin atmosferik betimlemesi",
   "playerActions": ["Saldır", "Kaç", "Keşfet" gibi oyunun başlangıcında yapılabilecek 3 eylem],
-  "gameCode": "TAM OYNANABILIR p5.js KODU. Bu kod @farcade/game-sdk ve p5.js kütüphanelerini birlikte kullanmalıdır. ÖNEMLİ KURALLAR: 1) await farcade.init() ile başla (setup içinde async kullan). 2) Oyun bittiğinde farcade.saveScore(score) çağır. 3) mETH ile alınan eşyaları farcade.getAssets() ile kontrol et. 4) Sadece saf JavaScript kodu yaz, HTML tagları (script vb.) OLMASIN. 5) setup() ve draw() fonksiyonlarını mutlaka içermeli. 6) Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap ve windowResized() fonksiyonunu ekle."
+  "gameCode": "TAM OYNANABILIR p5.js KODU. ÖNEMLI SDK KURALLARI: 1) Oyun başında 'await SDK.init()' çağır (async setup kullan). 2) Oyun başladığında 'await SDK.lifecycle.start()' çağır. 3) Oyun bittiğinde 'await SDK.lifecycle.finish(score)' çağır. 4) Skor göndermek için 'await SDK.score.send({ value: score })' kullan. 5) Sadece saf JavaScript kodu yaz, HTML tagları OLMASIN. 6) setup() ve draw() fonksiyonlarını mutlaka içermeli. 7) Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap ve windowResized() fonksiyonunu ekle. SDK global olarak 'window.SDK' üzerinden erişilebilir."
 }
 
 ÖNEMLİ: SADECE geçerli JSON döndür, başka hiçbir açıklama veya metin ekleme. gameCode alanına p5.js CDN linki ekleme, sadece JavaScript kodu yaz.`;

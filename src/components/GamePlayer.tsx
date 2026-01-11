@@ -82,14 +82,68 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.js"></script>
 </head>
 <body>
+    <script type="module">
+        // Import GameFactorySDK (inline for now, can be external later)
+        ${getSDKBundle()}
+        
+        // Expose SDK globally for game code
+        window.SDK = SDK;
+        
+        // Load Farcade compatibility shim for legacy code
+        ${getFarcadeShim()}
+    </script>
     <script>
         ${gameData.gameCode}
     </script>
 </body>
 </html>`;
+    };
+
+    // Bundle SDK for iframe injection
+    const getSDKBundle = () => {
+        // In production, this would be a bundled version
+        // For now, we'll use a simplified inline version
+        return `
+            class SimpleSDK {
+                constructor() {
+                    this.score = {
+                        current: 0,
+                        send: async (data) => {
+                            this.score.current = data.value;
+                            window.parent.postMessage({ type: 'SCORE_SUBMIT', data }, '*');
+                            return true;
+                        }
+                    };
+                    this.lifecycle = {
+                        start: async () => {
+                            window.parent.postMessage({ type: 'GAME_START' }, '*');
+                        },
+                        finish: async (score) => {
+                            window.parent.postMessage({ type: 'GAME_END', data: { score } }, '*');
+                        }
+                    };
+                }
+                async init() {
+                    window.parent.postMessage({ type: 'SDK_READY' }, '*');
+                }
+            }
+            const SDK = new SimpleSDK();
+        `;
+    };
+
+    const getFarcadeShim = () => {
+        return `
+            // Farcade compatibility shim
+            window.farcade = {
+                init: () => SDK.init(),
+                gameStart: () => SDK.lifecycle.start(),
+                gameEnd: (score) => SDK.lifecycle.finish(score),
+                submitScore: (score) => SDK.score.send({ value: score }),
+                getAssets: () => Promise.resolve([])
+            };
+        `;
     };
 
     return (
