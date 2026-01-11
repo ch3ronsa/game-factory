@@ -33,32 +33,40 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     const [energy, setEnergy] = useState(100);
     const [mETH, setmETH] = useState(0);
 
-    // REMIX DEĞİŞKENLERİ (İşte eksik olan parça buydu!)
+    // REMIX DEĞİŞKENLERİ
     const [remixVars, setRemixVars] = useState<Record<string, any>>({});
 
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // 1. DİNLEYİCİ (LISTENER) - KABLOYU TAKIYORUZ
+    // 🔍 DEBUG NOKTA 4: KARŞILAMA ANI - React tarafındaki listener
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            // Güvenlik kontrolü yapılabilir (origin check)
-
             const { type, payload } = event.data || {};
 
             if (!type) return;
 
+            // 🟢 DEBUG LOG 4: Mesaj yakalandı!
+            console.log(
+                '%c🎯 DEBUG 4: KARŞILAMA ANI - React Listener Mesaj Yakaladı!',
+                'background: #00ff00; color: #000; font-size: 14px; font-weight: bold; padding: 4px 8px;',
+                '\n📨 Type:', type,
+                '\n📦 Payload:', payload
+            );
+
             // LOG SİSTEMİ
-            if (type.startsWith('SDK_') || type.startsWith('GAME_')) {
+            if (type.startsWith('SDK_') || type.startsWith('GAME_') || type.startsWith('REGISTER_')) {
                 const logMsg = `> ${type}: ${JSON.stringify(payload).slice(0, 30)}`;
                 setLogs(prev => [logMsg, ...prev].slice(0, 6));
             }
 
-            // --- KRİTİK BÖLGE: SDK'DAN GELEN VERİYİ YAKALA ---
-
             // A. Oyun "Benim ayarlarım bunlar" dediğinde:
             if (type === 'REGISTER_SCHEMA') {
-                console.log('✅ UI: Remix Ayarları Alındı:', payload);
-                setRemixVars(payload); // Slider'ları oluşturmak için state'i güncelle
+                console.log(
+                    '%c✅ REGISTER_SCHEMA Alındı! Remix UI Oluşturuluyor...',
+                    'background: #ff00ff; color: #fff; font-size: 16px; font-weight: bold; padding: 8px;',
+                    payload
+                );
+                setRemixVars(payload);
             }
 
             // B. Oyun "Skor değişti" dediğinde:
@@ -68,17 +76,28 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
             }
         };
 
+        console.log(
+            '%c🎧 DEBUG: React Event Listener Kuruldu (window.addEventListener)',
+            'background: #0088ff; color: #fff; font-size: 12px; padding: 4px;'
+        );
+
         window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
+        return () => {
+            console.log('%c🔌 DEBUG: Event Listener Kaldırıldı', 'color: #888;');
+            window.removeEventListener('message', handleMessage);
+        };
     }, []);
 
-    // 2. GÖNDERİCİ (SENDER) - SLIDER OYNAYINCA OYUNA HABER VER
+    // 2. GÖNDERİCİ - SLIDER OYNAYINCA OYUNA HABER VER
     const handleRemixChange = (key: string, value: any) => {
-        // 1. UI'ı güncelle
         setRemixVars(prev => ({ ...prev, [key]: value }));
 
-        // 2. Oyuna (Iframe'e) postMessage at
         if (iframeRef.current && iframeRef.current.contentWindow) {
+            console.log(
+                '%c📤 Parent -> Iframe: UPDATE_REMIX Gönderiliyor',
+                'background: #ffaa00; color: #000; font-weight: bold; padding: 4px;',
+                { key, value }
+            );
             iframeRef.current.contentWindow.postMessage({
                 type: 'UPDATE_REMIX',
                 payload: { [key]: value }
@@ -86,17 +105,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
         }
     };
 
-    // Buton aksiyonları (Eski kodundan korundu)
-    const handleAction = (action: string) => {
-        const newLog = `> ${action} executed`;
-        setLogs(prev => [newLog, ...prev].slice(0, 6));
-        setEnergy(prev => Math.max(0, prev - 5));
-
-        // Simüle edilmiş bir mETH kazancı
-        if (Math.random() > 0.7) setmETH(prev => prev + 0.1);
-    };
-
-    // --- IFRAME İÇERİĞİ VE SDK ENJEKSİYONU ---
+    // --- IFRAME İÇERİĞİ VE SDK ENJEKSİYONU (DEBUG MODLU) ---
     const generateIframeSrcDoc = () => {
         return `<!DOCTYPE html>
 <html>
@@ -111,23 +120,49 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
 </head>
 <body>
     <script>
-        // --- INJECTED SIMPLE SDK ---
+        // 🔍 DEBUG NOKTA 1: ENJEKSİYON ANI
+        console.log(
+            '%c🚀 DEBUG 1: ENJEKSİYON ANI - SDK Class Tanımlanıyor...',
+            'background: #ff0000; color: #fff; font-size: 14px; font-weight: bold; padding: 4px 8px;'
+        );
+
         class GameFactorySDK {
             constructor() {
                 this.vars = {};
                 this.updateCallback = () => {};
                 this.score = 0;
                 this.initMessageListener();
+                
+                // 🟢 DEBUG LOG 1: SDK başarıyla oluşturuldu
+                console.log(
+                    '%c✅ DEBUG 1: SDK Instance Oluşturuldu!',
+                    'background: #00ff00; color: #000; font-size: 14px; font-weight: bold; padding: 4px 8px;',
+                    'this:', this
+                );
             }
 
-            // OYUN BU FONKSİYONU ÇAĞIRINCA PARENT'A HABER VERİR
+            // 🔍 DEBUG NOKTA 2: TETİKLEME ANI
             registerRemix(defaultVars) {
+                console.log(
+                    '%c🎯 DEBUG 2: TETİKLEME ANI - registerRemix() ÇAĞRILDI!',
+                    'background: #ffff00; color: #000; font-size: 16px; font-weight: bold; padding: 8px;',
+                    'Gelen Değişkenler:', defaultVars
+                );
+                
                 this.vars = defaultVars;
-                // ÖNEMLİ: Parent (React) bunu 'REGISTER_SCHEMA' olarak bekliyor
+                
+                // 🔍 DEBUG NOKTA 3: POSTACI ANI (sendMessage içinde)
                 this.sendMessage("REGISTER_SCHEMA", defaultVars); 
+                
+                console.log(
+                    '%c✅ registerRemix Tamamlandı - Değişkenler Kaydedildi',
+                    'background: #00ff00; color: #000; font-weight: bold; padding: 4px;',
+                    'this.vars:', this.vars
+                );
             }
 
             onRemixUpdate(callback) {
+                console.log('%c📡 onRemixUpdate Callback Kaydedildi', 'color: #0ff;');
                 this.updateCallback = callback;
             }
 
@@ -138,7 +173,6 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                 this.sendMessage("SUBMIT_SCORE", { score });
             }
 
-            // Convenience methods for Score
             addScore(value) {
                 this.score += value;
                 this.sendMessage("SUBMIT_SCORE", { score: this.score });
@@ -152,34 +186,84 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
             
             getScore() { return this.score; }
 
-            gameReady() { this.sendMessage("GAME_READY", true); }
-            gameStart() { this.sendMessage("GAME_START", true); }
-            gameEnd(score) { this.sendMessage("GAME_END", { score: score || this.score }); }
+            gameReady() { 
+                console.log('%c🎮 gameReady() çağrıldı', 'color: #0f0;');
+                this.sendMessage("GAME_READY", true); 
+            }
+            
+            gameStart() { 
+                console.log('%c▶️ gameStart() çağrıldı', 'color: #0f0;');
+                this.sendMessage("GAME_START", true); 
+            }
+            
+            gameEnd(score) { 
+                console.log('%c⏹️ gameEnd() çağrıldı, score:', score, 'color: #f00;');
+                this.sendMessage("GAME_END", { score: score || this.score }); 
+            }
 
+            // 🔍 DEBUG NOKTA 3: POSTACI ANI
             sendMessage(type, payload) {
-                window.parent.postMessage({ type, payload }, "*");
+                console.log(
+                    '%c📮 DEBUG 3: POSTACI ANI - postMessage() ÇALIŞIYOR!',
+                    'background: #ff00ff; color: #fff; font-size: 14px; font-weight: bold; padding: 4px 8px;',
+                    '\\n📨 Type:', type,
+                    '\\n📦 Payload:', payload,
+                    '\\n🎯 Target: window.parent'
+                );
+                
+                try {
+                    window.parent.postMessage({ type, payload }, "*");
+                    console.log(
+                        '%c✅ postMessage Başarılı! Mesaj Gönderildi.',
+                        'background: #00ff00; color: #000; font-weight: bold; padding: 4px;'
+                    );
+                } catch (error) {
+                    console.error(
+                        '%c❌ postMessage HATASI!',
+                        'background: #ff0000; color: #fff; font-weight: bold; padding: 4px;',
+                        error
+                    );
+                }
             }
 
             initMessageListener() {
+                console.log('%c🎧 SDK: Message Listener Kuruldu (iframe içinde)', 'color: #0ff;');
                 window.addEventListener("message", (event) => {
                     const { type, payload } = event.data || {};
-                    // REACT TARAFINDAN GELEN GÜNCELLEMEYİ YAKALA
+                    
                     if (type === "UPDATE_REMIX") {
+                        console.log(
+                            '%c📥 Iframe: UPDATE_REMIX Alındı!',
+                            'background: #00ffff; color: #000; font-weight: bold; padding: 4px;',
+                            payload
+                        );
                         this.vars = { ...this.vars, ...payload };
                         this.updateCallback(this.vars);
                     }
                 });
             }
         }
+        
         window.SDK = new GameFactorySDK();
+        
+        // 🟢 FINAL CHECK: SDK window'a atandı mı?
+        console.log(
+            '%c🎉 DEBUG 1 FINAL: window.SDK Atandı!',
+            'background: #00ff00; color: #000; font-size: 16px; font-weight: bold; padding: 8px;',
+            'window.SDK:', window.SDK,
+            '\\n✅ registerRemix fonksiyonu mevcut mu?', typeof window.SDK.registerRemix === 'function'
+        );
     </script>
     <script>
         // Hata yakalama
         window.onerror = function(msg, url, line) {
+            console.error('%c💥 OYUN HATASI!', 'background: #f00; color: #fff; padding: 4px;', msg, 'Line:', line);
             window.parent.postMessage({ type: 'SDK_ERROR', payload: msg }, '*');
         };
         
+        console.log('%c🎮 Oyun Kodu Yükleniyor...', 'background: #333; color: #fff; padding: 4px;');
         ${gameData.gameCode}
+        console.log('%c✅ Oyun Kodu Yüklendi', 'background: #0f0; color: #000; padding: 4px;');
     </script>
 </body>
 </html>`;
@@ -188,7 +272,17 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     return (
         <div className={`flex flex-col h-full w-full bg-[#050505] ${!isInline ? 'relative' : ''}`}>
 
-            {/* ÜST PANEL: REMIX KONTROLLERİ (YENİ EKLENDİ) */}
+            {/* DEBUG PANEL */}
+            <div className="absolute top-4 right-4 z-50 bg-red-900/90 border-2 border-red-500 rounded-lg p-3 text-white text-xs font-mono max-w-xs">
+                <div className="font-bold text-yellow-300 mb-2">🔍 DEBUG MODE ACTIVE</div>
+                <div className="text-[10px] space-y-1">
+                    <div>✅ Remix Vars: {Object.keys(remixVars).length}</div>
+                    <div>📊 Score: {score}</div>
+                    <div className="text-yellow-200 mt-2">Console'u açın! (F12)</div>
+                </div>
+            </div>
+
+            {/* REMIX KONTROLLERİ */}
             {Object.keys(remixVars).length > 0 && (
                 <div className="absolute top-4 left-4 z-40 bg-black/80 backdrop-blur border border-purple-500/30 rounded-xl p-4 w-64 shadow-2xl">
                     <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -199,13 +293,13 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                             <div key={key} className="space-y-1">
                                 <div className="flex justify-between text-[10px] text-gray-400 font-mono">
                                     <span>{key}</span>
-                                    <span className="text-white">{typeof value === 'number' ? value.toFixed(1) : value}</span>
+                                    <span className="text-white">{typeof value === 'number' ? value.toFixed(1) : String(value)}</span>
                                 </div>
                                 {typeof value === 'number' ? (
                                     <input
                                         type="range"
                                         min={0}
-                                        max={value > 10 ? 100 : 20} // Basit bir mantık, gerekirse iyileştirilebilir
+                                        max={value > 10 ? 100 : 20}
                                         step={0.1}
                                         value={value}
                                         onChange={(e) => handleRemixChange(key, parseFloat(e.target.value))}
@@ -235,18 +329,15 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
             {/* OYUN ALANI */}
             <div className={`relative flex-1 flex flex-col justify-center items-center p-4 ${isInline ? '' : 'p-8'}`}>
                 <div className="relative w-full max-w-6xl aspect-video">
-                    {/* Neon Glow & Container */}
                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-cyan-500 to-purple-600 rounded-2xl blur-xl opacity-75 animate-pulse"></div>
 
                     <div className="relative bg-black rounded-2xl overflow-hidden border border-purple-500/30 shadow-2xl h-full">
-                        {/* Loading Overlay */}
                         {isLoading && (
                             <div className="absolute inset-0 z-30 bg-black/95 flex items-center justify-center">
                                 <div className="text-purple-500 animate-pulse font-mono">INITIALIZING SDK BRIDGE...</div>
                             </div>
                         )}
 
-                        {/* Iframe */}
                         {!hasError && gameData.gameCode && (
                             <iframe
                                 ref={iframeRef}
@@ -254,17 +345,18 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                                 className="absolute inset-0 w-full h-full border-0"
                                 title={gameData.gameName}
                                 sandbox="allow-scripts allow-same-origin"
-                                onLoad={() => setIsLoading(false)}
+                                onLoad={() => {
+                                    setIsLoading(false);
+                                    console.log('%c🎬 Iframe Yüklendi!', 'background: #0f0; color: #000; font-size: 14px; padding: 4px;');
+                                }}
                             />
                         )}
 
-                        {/* SKOR TABELASI (SAĞ ÜST) */}
                         <div className="absolute top-4 right-6 bg-black/60 backdrop-blur border border-white/10 px-4 py-2 rounded-lg z-10">
                             <div className="text-xs text-gray-400 font-mono uppercase">Score</div>
                             <div className="text-2xl font-bold text-white font-mono">{score}</div>
                         </div>
 
-                        {/* Kapat Butonu (Modal ise) */}
                         {!isInline && (
                             <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-lg">
                                 ✕
