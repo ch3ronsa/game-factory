@@ -1,0 +1,4747 @@
+﻿# GAME FACTORY - COMPLETE PROJECT CODE
+
+
+
+========================================
+FILE: package.json
+========================================
+
+{
+  "name": "mantle",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@tanstack/react-query": "^5.90.16",
+    "framer-motion": "^12.25.0",
+    "next": "16.1.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hot-toast": "^2.6.0",
+    "viem": "^2.44.1",
+    "wagmi": "^3.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+
+
+========================================
+FILE: tsconfig.json
+========================================
+
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+
+
+========================================
+FILE: .env.example
+========================================
+
+# Environment Variables
+# Copy this file to .env.local and fill in your actual values
+# NEVER commit .env.local to git!
+
+# OpenRouter API Key
+NEXT_PUBLIC_OPENROUTER_API_KEY=your_api_key_here
+
+
+========================================
+FILE: .gitignore
+========================================
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+
+========================================
+FILE: README.md
+========================================
+
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+========================================
+FILE: SDK_SIMPLE.md
+========================================
+
+# Game Factory SDK - Simplified API Guide
+
+## ğŸš€ Quick Start
+
+The SDK is automatically available in your game as `window.SDK`. No imports needed!
+
+```javascript
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // 1. Register remix variables
+    SDK.registerRemix({
+        playerSpeed: 5,
+        gravity: 0.5,
+        backgroundColor: '#000000'
+    });
+    
+    // 2. Listen for updates
+    SDK.onRemixUpdate((vars) => {
+        playerSpeed = vars.playerSpeed;
+        gravity = vars.gravity;
+        bgColor = vars.backgroundColor;
+    });
+    
+    // 3. Game ready
+    SDK.gameReady();
+    SDK.gameStart();
+}
+
+function draw() {
+    // Use remix variables
+    const speed = SDK.getVar('playerSpeed');
+    // ... game logic
+}
+
+function gameOver() {
+    SDK.submitScore(score);
+    SDK.gameEnd(score);
+}
+```
+
+## ğŸ“š API Reference
+
+### SDK.registerRemix(variables)
+
+Register which variables can be remixed/modded.
+
+```javascript
+SDK.registerRemix({
+    playerSpeed: 5,        // Number
+    gravity: 0.5,          // Number
+    playerColor: '#ff0000', // String (color)
+    enableParticles: true   // Boolean
+});
+```
+
+### SDK.onRemixUpdate(callback)
+
+Listen for real-time variable updates from the platform.
+
+```javascript
+SDK.onRemixUpdate((newVars) => {
+    console.log('Variables updated:', newVars);
+    
+    // Update your game variables
+    playerSpeed = newVars.playerSpeed;
+    gravity = newVars.gravity;
+});
+```
+
+### SDK.getVar(key)
+
+Get current value of a variable.
+
+```javascript
+const speed = SDK.getVar('playerSpeed');
+const gravity = SDK.getVar('gravity');
+```
+
+### SDK.getAllVars()
+
+Get all variables as an object.
+
+```javascript
+const allVars = SDK.getAllVars();
+console.log(allVars); // { playerSpeed: 5, gravity: 0.5, ... }
+```
+
+### SDK.submitScore(score)
+
+Submit player's score.
+
+```javascript
+SDK.submitScore(1000);
+```
+
+### SDK.addScore(value)
+
+Add to current score (convenience method).
+
+```javascript
+SDK.addScore(100);  // Adds 100 to current score
+const total = SDK.addScore(50);  // Returns new total
+```
+
+### SDK.setScore(value)
+
+Set score directly (convenience method).
+
+```javascript
+SDK.setScore(500);  // Sets score to 500
+```
+
+### SDK.getScore()
+
+Get current score.
+
+```javascript
+const currentScore = SDK.getScore();
+```
+
+### SDK.gameReady()
+
+Tell the platform your game is ready to play.
+
+```javascript
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    // ... initialization
+    SDK.gameReady();
+}
+```
+
+### SDK.gameStart()
+
+Tell the platform the game has started.
+
+```javascript
+function mousePressed() {
+    SDK.gameStart();
+    gameActive = true;
+}
+```
+
+### SDK.gameEnd(finalScore)
+
+Tell the platform the game has ended.
+
+```javascript
+function gameOver() {
+    SDK.gameEnd(finalScore);
+}
+```
+
+## ğŸ® Complete Example
+
+```javascript
+// Game variables
+let playerSpeed = 5;
+let gravity = 0.5;
+let bgColor = '#000000';
+let score = 0;
+let gameActive = false;
+
+let player = {
+    x: 200,
+    y: 200,
+    vx: 0,
+    vy: 0
+};
+
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // Register remix variables
+    SDK.registerRemix({
+        playerSpeed: 5,
+        gravity: 0.5,
+        backgroundColor: '#000000',
+        playerSize: 30
+    });
+    
+    // Listen for real-time updates
+    SDK.onRemixUpdate((vars) => {
+        playerSpeed = vars.playerSpeed;
+        gravity = vars.gravity;
+        bgColor = vars.backgroundColor;
+        player.size = vars.playerSize;
+    });
+    
+    // Game is ready
+    SDK.gameReady();
+}
+
+function draw() {
+    background(bgColor);
+    
+    if (!gameActive) {
+        fill(255);
+        textAlign(CENTER, CENTER);
+        text('Click to Start', width/2, height/2);
+        return;
+    }
+    
+    // Use remix variables
+    if (keyIsDown(LEFT_ARROW)) {
+        player.vx = -playerSpeed;
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
+        player.vx = playerSpeed;
+    }
+    
+    // Apply gravity
+    player.vy += gravity;
+    
+    // Update position
+    player.x += player.vx;
+    player.y += player.vy;
+    
+    // Draw player
+    fill(255);
+    const size = SDK.getVar('playerSize');
+    rect(player.x, player.y, size, size);
+    
+    // Update score
+    score++;
+    SDK.submitScore(score);
+    
+    // Display score
+    fill(255);
+    textAlign(LEFT, TOP);
+    text('Score: ' + score, 20, 20);
+}
+
+function mousePressed() {
+    if (!gameActive) {
+        gameActive = true;
+        SDK.gameStart();
+    }
+}
+
+function keyPressed() {
+    if (key === 'q') {
+        gameActive = false;
+        SDK.gameEnd(score);
+    }
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
+```
+
+## ğŸ”„ Platform Integration
+
+### Sending Updates to Game (Parent Window)
+
+```javascript
+// Get the game iframe
+const gameIframe = document.getElementById('game-iframe');
+
+// Update a single variable
+gameIframe.contentWindow.postMessage({
+    type: 'UPDATE_REMIX',
+    payload: {
+        playerSpeed: 8
+    }
+}, '*');
+
+// Update multiple variables
+gameIframe.contentWindow.postMessage({
+    type: 'UPDATE_REMIX',
+    payload: {
+        playerSpeed: 8,
+        gravity: 1.2,
+        backgroundColor: '#ff0000'
+    }
+}, '*');
+
+// Request current state
+gameIframe.contentWindow.postMessage({
+    type: 'REQUEST_STATE'
+}, '*');
+
+// Reset game
+gameIframe.contentWindow.postMessage({
+    type: 'RESET_GAME'
+}, '*');
+```
+
+### Receiving Messages from Game (Parent Window)
+
+```javascript
+window.addEventListener('message', (event) => {
+    const { type, payload } = event.data;
+    
+    switch(type) {
+        case 'REGISTER_SCHEMA':
+            console.log('Game variables:', payload);
+            // Show UI controls for these variables
+            break;
+            
+        case 'SUBMIT_SCORE':
+            console.log('Score:', payload.score);
+            break;
+            
+        case 'GAME_READY':
+            console.log('Game is ready');
+            break;
+            
+        case 'GAME_START':
+            console.log('Game started');
+            break;
+            
+        case 'GAME_END':
+            console.log('Game ended with score:', payload.score);
+            break;
+            
+        case 'STATE_RESPONSE':
+            console.log('Current state:', payload);
+            break;
+    }
+});
+```
+
+## ğŸ¯ Best Practices
+
+1. **Register variables early** - Call `registerRemix()` in `setup()`
+2. **Use onRemixUpdate** - Don't poll, subscribe to changes
+3. **Keep it simple** - Only register variables that make sense to remix
+4. **Provide good defaults** - Make sure the game works well with default values
+5. **Test with updates** - Test your game with different variable values
+
+## ğŸ” Debugging
+
+Enable console logs to see SDK activity:
+
+```javascript
+// All SDK methods log to console
+// Look for [SDK] prefix in console
+
+SDK.registerRemix({ speed: 5 });
+// Console: [SDK] Remix registered: { speed: 5 }
+
+SDK.submitScore(100);
+// Console: [SDK] Score: 100
+```
+
+## ğŸ“¡ Message Types
+
+### From Game to Platform
+
+- `REGISTER_SCHEMA` - Game registered remix variables
+- `SUBMIT_SCORE` - Score update
+- `GAME_READY` - Game initialized
+- `GAME_START` - Game started
+- `GAME_END` - Game ended
+- `STATE_RESPONSE` - Current state (response to REQUEST_STATE)
+
+### From Platform to Game
+
+- `UPDATE_REMIX` - Update variable values
+- `REQUEST_STATE` - Request current state
+- `RESET_GAME` - Reset the game
+
+## ğŸš« Migration from Old SDK
+
+If you have old code using the complex API:
+
+```javascript
+// OLD (Complex)
+await SDK.init();
+SDK.schema.defineSchema([...]);
+SDK.lifecycle.start();
+SDK.score.send({ value: 100 });
+
+// NEW (Simple)
+SDK.registerRemix({ speed: 5 });
+SDK.gameStart();
+SDK.submitScore(100);
+```
+
+The new API is much simpler and easier to use!
+
+
+========================================
+FILE: REMIX_GUIDE.md
+========================================
+
+# Remix.gg Style Modding - Usage Examples
+
+## ğŸ¨ Schema Definition (Moddable Parameters)
+
+### Basic Example
+
+```javascript
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // Initialize SDK
+    await SDK.init({ debug: true });
+    
+    // Define what can be modded
+    SDK.schema.defineSchema([
+        {
+            key: 'playerSpeed',
+            type: 'range',
+            label: 'Player Speed',
+            defaultValue: 5,
+            min: 1,
+            max: 10,
+            step: 0.5,
+            description: 'How fast the player moves'
+        },
+        {
+            key: 'gravity',
+            type: 'number',
+            label: 'Gravity',
+            defaultValue: 0.5,
+            min: 0,
+            max: 2
+        },
+        {
+            key: 'backgroundColor',
+            type: 'color',
+            label: 'Background Color',
+            defaultValue: '#000000'
+        },
+        {
+            key: 'enableParticles',
+            type: 'boolean',
+            label: 'Enable Particles',
+            defaultValue: true
+        }
+    ]);
+}
+```
+
+### Using Schema Values in Game
+
+```javascript
+let playerSpeed;
+let gravity;
+let bgColor;
+
+function setup() {
+    // ... SDK init and schema definition ...
+    
+    // Get initial values
+    playerSpeed = SDK.schema.getValue('playerSpeed');
+    gravity = SDK.schema.getValue('gravity');
+    bgColor = SDK.schema.getValue('backgroundColor');
+    
+    // Listen for real-time updates
+    SDK.schema.onUpdate((key, value) => {
+        console.log(`${key} changed to ${value}`);
+        
+        // Update game variables in real-time
+        if (key === 'playerSpeed') playerSpeed = value;
+        if (key === 'gravity') gravity = value;
+        if (key === 'backgroundColor') bgColor = value;
+    });
+}
+
+function draw() {
+    // Use the moddable values
+    background(bgColor);
+    
+    // Player movement with moddable speed
+    if (keyIsDown(LEFT_ARROW)) {
+        playerX -= playerSpeed;
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
+        playerX += playerSpeed;
+    }
+    
+    // Apply moddable gravity
+    playerVelocityY += gravity;
+}
+```
+
+## ğŸ–¼ï¸ Asset Mapping (Sprite Replacement)
+
+### Basic Asset Mapping
+
+```javascript
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    await SDK.init();
+    
+    // Map original assets to remix URLs
+    SDK.assets.mapAssets([
+        {
+            originalUrl: '/sprites/player.png',
+            remixUrl: 'https://example.com/custom-player.png',
+            type: 'sprite'
+        },
+        {
+            originalUrl: '/sprites/enemy.png',
+            remixUrl: 'https://example.com/custom-enemy.png',
+            type: 'sprite'
+        },
+        {
+            originalUrl: '/sounds/jump.mp3',
+            remixUrl: 'https://example.com/custom-jump.mp3',
+            type: 'audio'
+        }
+    ]);
+}
+```
+
+### Loading Remixed Images
+
+```javascript
+let playerSprite;
+let enemySprite;
+
+async function preload() {
+    // SDK automatically uses remixed URLs if available
+    playerSprite = await SDK.assets.loadImage('/sprites/player.png');
+    enemySprite = await SDK.assets.loadImage('/sprites/enemy.png');
+}
+
+function draw() {
+    background(0);
+    
+    // Draw with potentially remixed sprites
+    image(playerSprite, playerX, playerY);
+    image(enemySprite, enemyX, enemyY);
+}
+```
+
+### With p5.js loadImage Integration
+
+```javascript
+let playerImg;
+
+function preload() {
+    // Get the remixed URL
+    const playerUrl = SDK.assets.getAssetUrl('/sprites/player.png');
+    
+    // Use with p5.js
+    playerImg = loadImage(playerUrl);
+}
+```
+
+## ğŸ”„ Real-time Updates from Parent Window
+
+### Parent Window Code (Remix UI)
+
+```javascript
+// Send variable update to game iframe
+const gameIframe = document.getElementById('game-iframe');
+
+gameIframe.contentWindow.postMessage({
+    type: 'UPDATE_VARIABLE',
+    data: {
+        key: 'playerSpeed',
+        value: 8
+    }
+}, '*');
+
+// Bulk update multiple variables
+gameIframe.contentWindow.postMessage({
+    type: 'BULK_UPDATE',
+    data: {
+        playerSpeed: 8,
+        gravity: 1.2,
+        backgroundColor: '#ff0000'
+    }
+}, '*');
+
+// Update assets
+gameIframe.contentWindow.postMessage({
+    type: 'UPDATE_ASSETS',
+    data: {
+        mappings: [
+            {
+                originalUrl: '/sprites/player.png',
+                remixUrl: 'https://new-url.com/player.png',
+                type: 'sprite'
+            }
+        ]
+    }
+}, '*');
+```
+
+### Game Code (Receives Updates)
+
+```javascript
+// Updates are automatically handled by SDK
+// Just subscribe to changes:
+
+SDK.schema.onUpdate((key, value) => {
+    console.log(`Remix update: ${key} = ${value}`);
+    
+    // Apply changes immediately
+    switch(key) {
+        case 'playerSpeed':
+            player.speed = value;
+            break;
+        case 'gravity':
+            world.gravity = value;
+            break;
+        case 'backgroundColor':
+            bgColor = color(value);
+            break;
+    }
+});
+```
+
+## ğŸ® Complete Remix-Ready Game Example
+
+```javascript
+// Game variables
+let player = {
+    x: 200,
+    y: 200,
+    speed: 5,
+    size: 30,
+    sprite: null
+};
+
+let world = {
+    gravity: 0.5,
+    bgColor: '#000000'
+};
+
+let particles = [];
+let particlesEnabled = true;
+
+async function preload() {
+    // Load sprites (will use remixed versions if available)
+    player.sprite = await SDK.assets.loadImage('/sprites/player.png');
+}
+
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // Initialize SDK
+    await SDK.init({ gameId: 'my-remix-game', debug: true });
+    
+    // Define moddable schema
+    SDK.schema.defineSchema([
+        { key: 'playerSpeed', type: 'range', label: 'Speed', defaultValue: 5, min: 1, max: 15 },
+        { key: 'playerSize', type: 'range', label: 'Size', defaultValue: 30, min: 10, max: 100 },
+        { key: 'gravity', type: 'number', label: 'Gravity', defaultValue: 0.5, min: 0, max: 3 },
+        { key: 'bgColor', type: 'color', label: 'Background', defaultValue: '#000000' },
+        { key: 'particlesEnabled', type: 'boolean', label: 'Particles', defaultValue: true }
+    ]);
+    
+    // Map assets
+    SDK.assets.mapAssets([
+        { originalUrl: '/sprites/player.png', remixUrl: '/sprites/player.png', type: 'sprite' }
+    ]);
+    
+    // Listen for real-time updates
+    SDK.schema.onUpdate((key, value) => {
+        if (key === 'playerSpeed') player.speed = value;
+        if (key === 'playerSize') player.size = value;
+        if (key === 'gravity') world.gravity = value;
+        if (key === 'bgColor') world.bgColor = value;
+        if (key === 'particlesEnabled') particlesEnabled = value;
+    });
+    
+    // Listen for asset updates
+    SDK.assets.onAssetLoad((url, success) => {
+        console.log(`Asset ${url} loaded: ${success}`);
+    });
+    
+    // Start game
+    await SDK.lifecycle.start();
+}
+
+function draw() {
+    // Use moddable background color
+    background(world.bgColor);
+    
+    // Player movement with moddable speed
+    if (keyIsDown(LEFT_ARROW)) player.x -= player.speed;
+    if (keyIsDown(RIGHT_ARROW)) player.x += player.speed;
+    if (keyIsDown(UP_ARROW)) player.y -= player.speed;
+    if (keyIsDown(DOWN_ARROW)) player.y += player.speed;
+    
+    // Draw player with moddable size and potentially remixed sprite
+    if (player.sprite) {
+        image(player.sprite, player.x, player.y, player.size, player.size);
+    } else {
+        fill(255);
+        rect(player.x, player.y, player.size, player.size);
+    }
+    
+    // Particles (if enabled)
+    if (particlesEnabled && frameCount % 5 === 0) {
+        particles.push({ x: player.x, y: player.y, life: 255 });
+    }
+    
+    // Update and draw particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.y += world.gravity;
+        p.life -= 5;
+        
+        fill(255, p.life);
+        ellipse(p.x, p.y, 5);
+        
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+async function keyPressed() {
+    if (key === 'q') {
+        await SDK.lifecycle.finish(score);
+    }
+}
+```
+
+## ğŸ“¡ Message Protocol
+
+### Messages Sent by Game (to Parent)
+
+```typescript
+// Schema defined
+{
+    type: 'SCHEMA_DEFINED',
+    data: {
+        schema: { properties: [...] },
+        currentValues: { playerSpeed: 5, gravity: 0.5 }
+    }
+}
+
+// Assets manifest
+{
+    type: 'ASSETS_MANIFEST',
+    data: {
+        assets: [
+            { originalUrl: '...', remixUrl: '...', type: 'sprite' }
+        ]
+    }
+}
+```
+
+### Messages Received by Game (from Parent)
+
+```typescript
+// Update single variable
+{
+    type: 'UPDATE_VARIABLE',
+    data: { key: 'playerSpeed', value: 8 }
+}
+
+// Bulk update
+{
+    type: 'BULK_UPDATE',
+    data: { playerSpeed: 8, gravity: 1.2 }
+}
+
+// Update assets
+{
+    type: 'UPDATE_ASSETS',
+    data: {
+        mappings: [...]
+    }
+}
+
+// Request current schema
+{
+    type: 'REQUEST_SCHEMA'
+}
+```
+
+## ğŸ¯ Best Practices
+
+1. **Always define schema early** - Call `defineSchema()` in `setup()`
+2. **Use onUpdate for reactivity** - Subscribe to changes instead of polling
+3. **Validate values** - SDK automatically validates against schema
+4. **Preload assets** - Use `SDK.assets.loadImage()` in `preload()`
+5. **Test with mock data** - Send test messages from console during development
+
+```javascript
+// Test in browser console:
+window.postMessage({
+    type: 'UPDATE_VARIABLE',
+    data: { key: 'playerSpeed', value: 10 }
+}, '*');
+```
+
+
+========================================
+FILE: SDK_USAGE.md
+========================================
+
+# Game Factory SDK - KullanÄ±m KÄ±lavuzu
+
+## ğŸ“¦ Kurulum
+
+SDK otomatik olarak oyun iframe'ine yÃ¼klenir. Oyun kodunuzda `window.SDK` Ã¼zerinden eriÅŸebilirsiniz.
+
+## ğŸš€ HÄ±zlÄ± BaÅŸlangÄ±Ã§
+
+### Temel KullanÄ±m
+
+```javascript
+// 1. SDK'yÄ± baÅŸlat
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // SDK'yÄ± initialize et
+    await SDK.init();
+    
+    // Oyunu baÅŸlat
+    await SDK.lifecycle.start();
+}
+
+// 2. Oyun dÃ¶ngÃ¼sÃ¼
+function draw() {
+    background(0);
+    // Oyun mantÄ±ÄŸÄ±nÄ±z...
+}
+
+// 3. Oyun bittiÄŸinde
+async function gameOver() {
+    const finalScore = 1000;
+    await SDK.lifecycle.finish(finalScore);
+    await SDK.score.send({ value: finalScore });
+}
+```
+
+## ğŸ“š API ReferansÄ±
+
+### SDK.init()
+
+SDK'yÄ± baÅŸlatÄ±r. Oyunun baÅŸÄ±nda bir kez Ã§aÄŸrÄ±lmalÄ±dÄ±r.
+
+```javascript
+await SDK.init({ 
+    gameId: 'my-game',  // Opsiyonel
+    debug: true         // Opsiyonel: Debug loglarÄ± iÃ§in
+});
+```
+
+### SDK.lifecycle
+
+Oyun yaÅŸam dÃ¶ngÃ¼sÃ¼nÃ¼ yÃ¶netir.
+
+#### start()
+Oyunu baÅŸlatÄ±r.
+```javascript
+await SDK.lifecycle.start();
+```
+
+#### finish(score)
+Oyunu bitirir ve final skorunu gÃ¶nderir.
+```javascript
+await SDK.lifecycle.finish(1500);
+```
+
+#### pause()
+Oyunu duraklatÄ±r.
+```javascript
+SDK.lifecycle.pause();
+```
+
+#### resume()
+Oyunu devam ettirir.
+```javascript
+SDK.lifecycle.resume();
+```
+
+#### onUpdate(callback)
+Oyun durumu deÄŸiÅŸtiÄŸinde Ã§aÄŸrÄ±lÄ±r.
+```javascript
+const unsubscribe = SDK.lifecycle.onUpdate((state) => {
+    console.log('Game state:', state);
+    // state.status: 'idle' | 'playing' | 'paused' | 'finished'
+    // state.score: number
+    // state.level: number
+});
+
+// Dinlemeyi durdurmak iÃ§in:
+unsubscribe();
+```
+
+### SDK.score
+
+Skor yÃ¶netimi.
+
+#### send(scoreData)
+Skor gÃ¶nderir.
+```javascript
+await SDK.score.send({ 
+    value: 1000,
+    metadata: { level: 5, combo: 10 }  // Opsiyonel
+});
+```
+
+#### getCurrent()
+Mevcut skoru dÃ¶ndÃ¼rÃ¼r.
+```javascript
+const currentScore = SDK.score.getCurrent();
+```
+
+#### getHigh()
+En yÃ¼ksek skoru dÃ¶ndÃ¼rÃ¼r (localStorage'dan).
+```javascript
+const highScore = SDK.score.getHigh();
+```
+
+#### reset()
+Mevcut skoru sÄ±fÄ±rlar.
+```javascript
+SDK.score.reset();
+```
+
+## ğŸ”„ Farcade'den GeÃ§iÅŸ
+
+Eski Farcade SDK kodlarÄ±nÄ±z otomatik olarak Ã§alÄ±ÅŸacaktÄ±r. Ancak yeni API'ye geÃ§menizi Ã¶neririz:
+
+### Eski Kod (Farcade)
+```javascript
+await farcade.init();
+await farcade.gameStart();
+await farcade.submitScore(1000);
+await farcade.gameEnd();
+```
+
+### Yeni Kod (Game Factory SDK)
+```javascript
+await SDK.init();
+await SDK.lifecycle.start();
+await SDK.score.send({ value: 1000 });
+await SDK.lifecycle.finish(1000);
+```
+
+## ğŸ’¡ Ã–rnek Oyun
+
+```javascript
+let score = 0;
+let gameActive = false;
+
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // SDK baÅŸlat
+    await SDK.init({ debug: true });
+    
+    // State deÄŸiÅŸikliklerini dinle
+    SDK.lifecycle.onUpdate((state) => {
+        console.log('Game status:', state.status);
+    });
+}
+
+async function mousePressed() {
+    if (!gameActive) {
+        // Oyunu baÅŸlat
+        await SDK.lifecycle.start();
+        gameActive = true;
+        score = 0;
+    } else {
+        // Skor artÄ±r
+        score += 10;
+        await SDK.score.send({ value: score });
+    }
+}
+
+async function keyPressed() {
+    if (key === 'q' && gameActive) {
+        // Oyunu bitir
+        gameActive = false;
+        await SDK.lifecycle.finish(score);
+    }
+}
+
+function draw() {
+    background(0);
+    fill(255);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    
+    if (gameActive) {
+        text(`Score: ${score}`, width/2, height/2);
+        text('Click to score, Q to quit', width/2, height/2 + 50);
+    } else {
+        text('Click to Start', width/2, height/2);
+    }
+}
+```
+
+## ğŸ›¡ï¸ Hata YÃ¶netimi
+
+SDK otomatik olarak hatalarÄ± yÃ¶netir ve parent window yanÄ±t vermese bile oyun donmaz:
+
+```javascript
+try {
+    await SDK.score.send({ value: score });
+} catch (error) {
+    console.log('Score submission failed, but game continues');
+}
+```
+
+## ğŸ” Debug Modu
+
+Debug modunu aktif etmek iÃ§in:
+
+```javascript
+await SDK.init({ debug: true });
+```
+
+Console'da ÅŸu loglarÄ± gÃ¶receksiniz:
+- `[GameFactorySDK]` - Ana SDK mesajlarÄ±
+- `[ScoreModule]` - Skor iÅŸlemleri
+- `[LifecycleModule]` - YaÅŸam dÃ¶ngÃ¼sÃ¼ olaylarÄ±
+
+## ğŸ“ Parent Window Ä°letiÅŸimi
+
+SDK otomatik olarak parent window ile `postMessage` Ã¼zerinden iletiÅŸim kurar:
+
+**GÃ¶nderilen Mesajlar:**
+- `SDK_READY` - SDK hazÄ±r
+- `GAME_START` - Oyun baÅŸladÄ±
+- `GAME_END` - Oyun bitti
+- `SCORE_SUBMIT` - Skor gÃ¶nderildi
+
+**AlÄ±nan Mesajlar:**
+- `REQUEST_STATE` - Durum bilgisi istendi
+- `RESET_GAME` - Oyunu sÄ±fÄ±rla
+
+## ğŸ¯ Best Practices
+
+1. **Her zaman async/await kullanÄ±n**
+   ```javascript
+   await SDK.init();  // âœ… DoÄŸru
+   SDK.init();        // âŒ YanlÄ±ÅŸ
+   ```
+
+2. **Oyun baÅŸÄ±nda init() Ã§aÄŸÄ±rÄ±n**
+   ```javascript
+   async function setup() {
+       await SDK.init();
+       // DiÄŸer setup kodu...
+   }
+   ```
+
+3. **State deÄŸiÅŸikliklerini dinleyin**
+   ```javascript
+   SDK.lifecycle.onUpdate((state) => {
+       if (state.status === 'finished') {
+           // Oyun bitti, cleanup yap
+       }
+   });
+   ```
+
+4. **Hata durumlarÄ±nÄ± handle edin**
+   ```javascript
+   try {
+       await SDK.score.send({ value: score });
+   } catch (error) {
+       // Fallback logic
+   }
+   ```
+
+
+========================================
+FILE: src/app/layout.tsx
+========================================
+
+import type { Metadata } from 'next';
+import { Inter, Outfit } from 'next/font/google';
+import './globals.css';
+import { Providers } from '@/components/Providers';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
+
+export const metadata: Metadata = {
+    title: 'Game Factory - AI ile Oyun Yarat',
+    description: 'Mantle Network Ã¼zerinde AI destekli oyun Ã¼retici.',
+};
+
+export default function RootLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <html lang="tr">
+            <body className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-slate-50 text-slate-900`}>
+                <Providers>
+                    {children}
+                </Providers>
+            </body>
+        </html>
+    );
+}
+
+
+========================================
+FILE: src/app/page.tsx
+========================================
+
+'use client';
+
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@/components/ConnectButton';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+
+export default function Home() {
+    const { isConnected } = useAccount();
+
+    return (
+        <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
+            {/* Decorative Background Elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[100px] mix-blend-multiply animate-blob"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-400/20 rounded-full blur-[100px] mix-blend-multiply animate-blob animation-delay-2000"></div>
+                <div className="absolute bottom-[-20%] left-[20%] w-[600px] h-[600px] bg-pink-400/20 rounded-full blur-[100px] mix-blend-multiply animate-blob animation-delay-4000"></div>
+            </div>
+
+            <header className="w-full py-6 px-8 flex justify-between items-center z-10">
+                <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">
+                        <span className="text-2xl">â˜º</span>
+                    </div>
+                    <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">Game Factory</span>
+                </div>
+                <ConnectButton />
+            </header>
+
+            <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-4 lg:px-20 z-10 gap-12 lg:gap-24">
+
+                {/* Left Content */}
+                <div className="flex-1 max-w-2xl text-center lg:text-left space-y-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+                            Oyun yapmanÄ±n <br />
+                            <span className="text-blue-500">Ã¼cretsiz</span>, <br />
+                            <span className="text-blue-500">eÄŸlenceli</span> ve <span className="text-blue-500">etkili</span> <br />
+                            yolu!
+                        </h1>
+                    </motion.div>
+
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="text-lg lg:text-xl text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0"
+                    >
+                        AI destekli oyun Ã¼retici ile hayal ettiÄŸiniz oyunu saniyeler iÃ§inde yaratÄ±n. Mantle Network Ã¼zerinde toplulukla paylaÅŸÄ±n!
+                    </motion.p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                        className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+                    >
+                        <Link href="/create" className="px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-500/30 transform hover:scale-105 transition-all duration-200 text-center">
+                            BAÅLA
+                        </Link>
+                        <Link href="/profil">
+                            <button className="px-8 py-4 bg-white hover:bg-slate-50 text-blue-500 border-2 border-slate-200 font-bold rounded-2xl shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-200 uppercase tracking-wide">
+                                ZATEN HESABIM VAR
+                            </button>
+                        </Link>
+                    </motion.div>
+                </div>
+
+                {/* Right Content - Mascot/Hero Image */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="flex-1 relative w-full max-w-[500px] aspect-square"
+                >
+                    {/* Main Card Background */}
+                    <div className="absolute inset-0 bg-blue-100/50 rounded-[3rem] transform rotate-3"></div>
+                    <div className="absolute inset-0 bg-blue-200/50 rounded-[3rem] transform -rotate-2 scale-95"></div>
+
+                    {/* Image Container */}
+                    <div className="absolute inset-4 bg-gradient-to-b from-white to-blue-50 rounded-[2.5rem] shadow-2xl flex items-center justify-center p-8 border border-white/50 relative overflow-hidden">
+
+                        {/* Decorative Elements inside card */}
+                        <div className="absolute top-4 right-4 text-orange-400 text-4xl animate-bounce delay-1000">â˜…</div>
+                        <div className="absolute bottom-8 left-8 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+                        <div className="absolute top-1/2 right-2 w-2 h-8 bg-pink-400 rounded-full transform rotate-45"></div>
+
+                        {/* Mascot Image - Assuming mascot.png exists in public/images/ */}
+                        <div className="relative w-full h-full flex items-center justify-center z-10">
+                            <Image
+                                src="/images/mascot.png"
+                                alt="Game Factory Mascot"
+                                width={400}
+                                height={400}
+                                priority
+                                className="object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+                            />
+                        </div>
+                    </div>
+                </motion.div>
+            </main>
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/app/globals.css
+========================================
+
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-outfit: var(--font-outfit);
+}
+
+@layer utilities {
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+========================================
+FILE: src/app/create/page.tsx
+========================================
+
+'use client';
+
+import { ProfileButton } from '@/components/ProfileButton';
+import { GameDescriptionForm } from '@/components/GameDescriptionForm';
+import Link from 'next/link';
+
+export default function CreatePage() {
+    return (
+        <div className="min-h-screen bg-[#0F0F12] text-white selection:bg-purple-500/30 font-sans">
+            {/* Background Ambience */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px]"></div>
+                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]"></div>
+            </div>
+
+            {/* Header - Minimalist */}
+            <header className="relative z-20 border-b border-white/5 backdrop-blur-xl">
+                <nav className="flex items-center justify-between px-6 py-4 md:px-8 max-w-[1600px] mx-auto">
+                    {/* Logo - Tech Style */}
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <div className="relative w-8 h-8 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-purple-600 rounded-lg opacity-20 group-hover:opacity-40 transition-opacity blur-sm"></div>
+                            <span className="relative text-xl font-bold bg-gradient-to-tr from-purple-400 to-white bg-clip-text text-transparent">GF</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-200 tracking-tight group-hover:text-white transition-colors">Game Factory</span>
+                    </Link>
+
+                    {/* Navigation Actions */}
+                    <div className="flex items-center gap-6">
+                        <Link href="/" className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden md:block">
+                            Dashboard
+                        </Link>
+                        <div className="h-4 w-px bg-white/10 hidden md:block"></div>
+                        <ProfileButton />
+                    </div>
+                </nav>
+            </header>
+
+            {/* Main Workspace */}
+            <main className="relative z-10 p-6 md:p-8 max-w-[1600px] mx-auto min-h-[calc(100vh-80px)]">
+                <GameDescriptionForm />
+            </main>
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/app/profil/page.tsx
+========================================
+
+'use client';
+
+import { ProfileButton } from '@/components/ProfileButton';
+import Link from 'next/link';
+import { useAccount } from 'wagmi';
+
+export default function ProfilPage() {
+    const { address, isConnected } = useAccount();
+
+    return (
+        <div className="min-h-screen relative overflow-hidden bg-white">
+            {/* Header */}
+            <header className="relative z-20 bg-white border-b-2 border-gray-100">
+                <nav className="flex items-center justify-between px-6 py-4 md:px-12 max-w-7xl mx-auto">
+                    {/* Logo */}
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <div className="relative w-10 h-10 bg-[#58CC02] rounded-xl flex items-center justify-center shadow-[0_4px_0_0_#46a302] group-hover:translate-y-[2px] group-hover:shadow-[0_2px_0_0_#46a302] transition-all">
+                            <span className="text-2xl text-white">â˜º</span>
+                        </div>
+                        <span className="text-2xl font-extrabold text-[#58CC02] tracking-wide">Game Factory</span>
+                    </Link>
+
+                    {/* Profile/Connect Button */}
+                    <ProfileButton />
+                </nav>
+            </header>
+
+            {/* Main Content */}
+            <main className="relative z-10 px-4 md:px-8 pb-20">
+                <section className="max-w-6xl mx-auto pt-8 md:pt-12">
+                    {/* Back Button */}
+                    <Link
+                        href="/"
+                        className="mb-8 inline-flex items-center gap-3 text-gray-400 hover:text-gray-600 transition-colors group font-bold uppercase tracking-wider text-sm"
+                    >
+                        <div className="w-10 h-10 rounded-xl border-2 border-gray-200 flex items-center justify-center group-hover:border-gray-300 group-hover:bg-gray-50 transition-all">
+                            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </div>
+                        Ana Sayfa
+                    </Link>
+
+                    {isConnected && address ? (
+                        <div className="animate-in slide-in-from-bottom-4 duration-500">
+                            {/* Profile Header */}
+                            <div className="bg-white border-2 border-gray-200 rounded-3xl p-8 md:p-12 mb-8 shadow-sm flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+                                <div className="relative group">
+                                    <div className="w-32 h-32 rounded-full bg-[#1CB0F6] border-4 border-[#1CB0F6] flex items-center justify-center shadow-[0_6px_0_0_#1899d6]">
+                                        <span className="text-5xl font-extrabold text-white">
+                                            {address.slice(2, 4).toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div className="absolute bottom-0 right-0 w-8 h-8 bg-[#58CC02] rounded-full border-4 border-white"></div>
+                                </div>
+
+                                <div className="flex-1">
+                                    <h2 className="text-4xl font-extrabold text-slate-700 mb-2">HoÅŸgeldin, Oyuncu!</h2>
+                                    <p className="text-slate-400 font-mono text-lg bg-slate-50 px-4 py-2 rounded-xl inline-block border-2 border-slate-100">
+                                        {address}
+                                    </p>
+                                </div>
+
+                                <Link href="/create">
+                                    <button className="px-8 py-4 bg-[#58CC02] hover:bg-[#46a302] text-white font-extrabold text-lg rounded-2xl transition-all shadow-[0_4px_0_0_#46a302] active:shadow-none active:translate-y-[4px] uppercase tracking-wide">
+                                        Yeni Oyun OluÅŸtur
+                                    </button>
+                                </Link>
+                            </div>
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                                <div className="bg-white border-2 border-gray-200 rounded-3xl p-6 flex items-center gap-4 hover:border-yellow-400 transition-colors cursor-default">
+                                    <div className="w-16 h-16 bg-yellow-400 rounded-2xl flex items-center justify-center shadow-[0_4px_0_0_#e5a500]">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-400 font-bold uppercase text-xs tracking-wider">Oyunlar</p>
+                                        <p className="text-3xl font-extrabold text-slate-700">0</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white border-2 border-gray-200 rounded-3xl p-6 flex items-center gap-4 hover:border-[#1CB0F6] transition-colors cursor-default">
+                                    <div className="w-16 h-16 bg-[#1CB0F6] rounded-2xl flex items-center justify-center shadow-[0_4px_0_0_#1899d6]">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-400 font-bold uppercase text-xs tracking-wider">OynanÄ±ÅŸ</p>
+                                        <p className="text-3xl font-extrabold text-slate-700">0</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white border-2 border-gray-200 rounded-3xl p-6 flex items-center gap-4 hover:border-purple-400 transition-colors cursor-default">
+                                    <div className="w-16 h-16 bg-purple-400 rounded-2xl flex items-center justify-center shadow-[0_4px_0_0_#9333ea]">
+                                        <span className="text-2xl font-extrabold text-white">Î</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-400 font-bold uppercase text-xs tracking-wider">mETH KazancÄ±</p>
+                                        <p className="text-3xl font-extrabold text-slate-700">0.00</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* My Games Section */}
+                            <div className="space-y-6">
+                                <h3 className="text-2xl font-extrabold text-slate-700 ml-2">OyunlarÄ±m</h3>
+                                <div className="bg-white border-2 border-gray-200 rounded-3xl p-12 text-center">
+                                    <div className="w-32 h-32 mx-auto mb-6 rounded-3xl bg-gray-50 flex items-center justify-center border-4 border-dashed border-gray-200">
+                                        <span className="text-4xl grayscale opacity-50">ğŸ®</span>
+                                    </div>
+                                    <p className="text-xl text-slate-500 font-bold mb-8">HenÃ¼z hiÃ§ oyun oluÅŸturmadÄ±n.</p>
+
+                                    <Link href="/create">
+                                        <button className="px-12 py-4 bg-[#1CB0F6] hover:bg-[#1899d6] text-white font-extrabold text-lg rounded-2xl transition-all shadow-[0_4px_0_0_#1899d6] active:shadow-none active:translate-y-[4px] uppercase tracking-wide">
+                                            Ä°lk Oyununu OluÅŸtur
+                                        </button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        // Not Connected State
+                        <div className="max-w-2xl mx-auto text-center py-20 px-4 animate-in fade-in duration-500">
+                            <div className="relative w-48 h-48 mx-auto mb-10">
+                                <div className="absolute inset-0 bg-[#E5E5E5] rounded-full animate-ping opacity-20"></div>
+                                <div className="relative w-full h-full bg-white border-4 border-gray-100 rounded-[3rem] flex items-center justify-center shadow-xl rotate-3 hover:rotate-0 transition-transform duration-300">
+                                    <span className="text-7xl">ğŸ”’</span>
+                                </div>
+                            </div>
+                            <h2 className="text-4xl font-extrabold text-slate-700 mb-6">Profilini GÃ¶rÃ¼ntÃ¼le</h2>
+                            <p className="text-xl text-slate-500 mb-12 font-medium leading-relaxed">
+                                Ä°lerlemeni takip etmek, oyunlarÄ±nÄ± yÃ¶netmek ve kazanÃ§larÄ±nÄ± gÃ¶rmek iÃ§in cÃ¼zdanÄ±nÄ± baÄŸla.
+                            </p>
+                            <div className="inline-block transform hover:scale-105 transition-transform duration-200">
+                                <ProfileButton />
+                            </div>
+                        </div>
+                    )}
+                </section>
+            </main>
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/app/sdk-test/page.tsx
+========================================
+
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export default function SDKTest() {
+    const [status, setStatus] = useState('ğŸ”„ Loading SDK...');
+    const [remixVars, setRemixVars] = useState<Record<string, any>>({});
+    const [score, setScore] = useState(0);
+    const [messages, setMessages] = useState<string[]>([]);
+
+    const addLog = (msg: string) => {
+        setMessages(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+    };
+
+    useEffect(() => {
+        const testSDK = () => {
+            try {
+                // Create a mock SDK for testing (since real SDK is in iframe)
+                const mockSDK = {
+                    vars: {} as Record<string, any>,
+                    updateCallback: (vars: Record<string, any>) => { },
+                    score: 0,
+
+                    registerRemix(defaultVars: Record<string, any>) {
+                        this.vars = defaultVars;
+                        addLog(`âœ… registerRemix called with: ${JSON.stringify(defaultVars)}`);
+                        setRemixVars(defaultVars);
+                    },
+
+                    onRemixUpdate(callback: (vars: Record<string, any>) => void) {
+                        this.updateCallback = callback;
+                        addLog('âœ… onRemixUpdate listener registered');
+                    },
+
+                    getVar(key: string) {
+                        addLog(`ğŸ“– getVar('${key}') = ${this.vars[key]}`);
+                        return this.vars[key];
+                    },
+
+                    getAllVars() {
+                        addLog(`ğŸ“– getAllVars() = ${JSON.stringify(this.vars)}`);
+                        return this.vars;
+                    },
+
+                    submitScore(score: number) {
+                        this.score = score;
+                        addLog(`ğŸ¯ submitScore(${score})`);
+                        setScore(score);
+                    },
+
+                    addScore(value: number) {
+                        this.score += value;
+                        addLog(`â• addScore(${value}) -> Total: ${this.score}`);
+                        setScore(this.score);
+                        return this.score;
+                    },
+
+                    setScore(value: number) {
+                        this.score = value;
+                        addLog(`ğŸ“ setScore(${value})`);
+                        setScore(value);
+                    },
+
+                    getScore() {
+                        addLog(`ğŸ“– getScore() = ${this.score}`);
+                        return this.score;
+                    },
+
+                    gameReady() {
+                        addLog('ğŸ® gameReady() called');
+                    },
+
+                    gameStart() {
+                        addLog('â–¶ï¸ gameStart() called');
+                    },
+
+                    gameEnd(finalScore?: number) {
+                        addLog(`â¹ï¸ gameEnd(${finalScore ?? this.score})`);
+                    }
+                };
+
+                // Test sequence
+                addLog('ğŸš€ Starting SDK test...');
+
+                // 1. Register remix variables
+                mockSDK.registerRemix({
+                    playerSpeed: 5,
+                    gravity: 0.5,
+                    backgroundColor: '#000000',
+                    enableParticles: true
+                });
+
+                // 2. Setup update listener
+                mockSDK.onRemixUpdate((vars) => {
+                    addLog(`ğŸ”„ Remix updated: ${JSON.stringify(vars)}`);
+                    setRemixVars(vars);
+                });
+
+                // 3. Game lifecycle
+                mockSDK.gameReady();
+                mockSDK.gameStart();
+
+                // 4. Submit some scores
+                setTimeout(() => {
+                    mockSDK.addScore(100);
+                }, 1000);
+
+                setTimeout(() => {
+                    mockSDK.addScore(150); // Total: 250
+                }, 2000);
+
+                setTimeout(() => {
+                    mockSDK.addScore(250); // Total: 500
+                }, 3000);
+
+                setTimeout(() => {
+                    const finalScore = mockSDK.getScore();
+                    mockSDK.gameEnd(finalScore);
+                }, 4000);
+
+                // 5. Test variable access
+                setTimeout(() => {
+                    mockSDK.getVar('playerSpeed');
+                    mockSDK.getAllVars();
+                }, 5000);
+
+                setStatus('âœ… SDK Test Running');
+
+                // Simulate platform sending updates
+                setTimeout(() => {
+                    addLog('ğŸŒ Simulating platform update...');
+                    const newVars = {
+                        playerSpeed: 8,
+                        gravity: 1.2,
+                        backgroundColor: '#ff0000',
+                        enableParticles: false
+                    };
+                    mockSDK.vars = { ...mockSDK.vars, ...newVars };
+                    mockSDK.updateCallback(mockSDK.vars);
+                }, 6000);
+
+            } catch (err) {
+                setStatus('âŒ Error: ' + String(err));
+                addLog('âŒ Error: ' + String(err));
+            }
+        };
+
+        testSDK();
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-black text-white p-8 font-mono">
+            <div className="max-w-4xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="border border-purple-500/30 rounded-lg p-6 bg-purple-500/5">
+                    <h1 className="text-3xl font-bold text-purple-400 mb-2">SDK Test Suite</h1>
+                    <p className="text-gray-400">Testing simplified Game Factory SDK</p>
+                </div>
+
+                {/* Status */}
+                <div className="border border-white/10 rounded-lg p-6 bg-white/5">
+                    <h2 className="text-xl font-bold mb-4 text-cyan-400">Status</h2>
+                    <p className="text-2xl">{status}</p>
+                </div>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="border border-white/10 rounded-lg p-6 bg-white/5">
+                        <h3 className="text-sm text-gray-400 mb-2">Current Score</h3>
+                        <p className="text-3xl font-bold text-yellow-400">{score}</p>
+                    </div>
+                    <div className="border border-white/10 rounded-lg p-6 bg-white/5">
+                        <h3 className="text-sm text-gray-400 mb-2">Remix Variables</h3>
+                        <p className="text-xl font-bold text-green-400">{Object.keys(remixVars).length}</p>
+                    </div>
+                </div>
+
+                {/* Remix Variables */}
+                <div className="border border-white/10 rounded-lg p-6 bg-white/5">
+                    <h2 className="text-xl font-bold mb-4 text-green-400">Remix Variables</h2>
+                    <div className="space-y-2">
+                        {Object.entries(remixVars).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center p-3 bg-black/30 rounded">
+                                <span className="text-gray-300">{key}</span>
+                                <span className="text-purple-400 font-bold">
+                                    {typeof value === 'boolean' ? (value ? 'âœ“' : 'âœ—') : String(value)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Event Log */}
+                <div className="border border-white/10 rounded-lg p-6 bg-white/5">
+                    <h2 className="text-xl font-bold mb-4 text-blue-400">Event Log</h2>
+                    <div className="space-y-1 max-h-96 overflow-y-auto">
+                        {messages.map((msg, i) => (
+                            <div key={i} className="text-sm text-gray-300 font-mono p-2 bg-black/30 rounded">
+                                {msg}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* API Reference */}
+                <div className="border border-white/10 rounded-lg p-6 bg-white/5">
+                    <h2 className="text-xl font-bold mb-4 text-orange-400">API Methods Tested</h2>
+                    <div className="grid grid-cols-2 gap-2">
+                        {[
+                            'registerRemix()',
+                            'onRemixUpdate()',
+                            'getVar()',
+                            'getAllVars()',
+                            'submitScore()',
+                            'gameReady()',
+                            'gameStart()',
+                            'gameEnd()'
+                        ].map(method => (
+                            <div key={method} className="p-3 bg-black/30 rounded text-sm">
+                                <code className="text-green-400">{method}</code>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Instructions */}
+                <div className="border border-yellow-500/30 rounded-lg p-6 bg-yellow-500/5">
+                    <h2 className="text-xl font-bold mb-4 text-yellow-400">â„¹ï¸ Instructions</h2>
+                    <ul className="space-y-2 text-gray-300">
+                        <li>â€¢ Watch the event log for SDK method calls</li>
+                        <li>â€¢ Score will increment automatically (100 â†’ 250 â†’ 500)</li>
+                        <li>â€¢ Remix variables will update after 6 seconds (simulating platform update)</li>
+                        <li>â€¢ Open browser console for detailed logs</li>
+                        <li>â€¢ Real SDK runs in game iframe, this is a mock test</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/app/api/generate-game/route.ts
+========================================
+
+import { NextRequest, NextResponse } from 'next/server';
+import { AI_CONFIG } from '@/config/ai';
+
+const SYSTEM_PROMPT = `Sen hem bir Oyun TasarÄ±mÄ± UzmanÄ± hem de deneyimli bir p5.js GeliÅŸtiricisisin. KullanÄ±cÄ±nÄ±n girdiÄŸi oyun fikrini analiz et ve aÅŸaÄŸÄ±daki ÅŸemaya uygun bir JSON objesi dÃ¶ndÃ¼r.
+
+JSON FormatÄ±:
+{
+  "gameName": "Oyunun AdÄ± (yaratÄ±cÄ± ve akÄ±lda kalÄ±cÄ±)",
+  "genre": "Oyun TÃ¼rÃ¼ (Action, RPG, Puzzle, Strategy, Adventure, Platformer, vb.)",
+  "mechanics": ["Mekanik 1", "Mekanik 2", "Mekanik 3"],
+  "levelStructure": "Seviye yapÄ±sÄ±nÄ±n detaylÄ± aÃ§Ä±klamasÄ±",
+  "mantleAssets": ["mETH ile alÄ±nabilecek eÅŸya 1", "eÅŸya 2", "eÅŸya 3"],
+  "difficulty": 1-10 arasÄ± zorluk seviyesi (sayÄ± olarak),
+  "visualStyle": "GÃ¶rsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
+  "startingScene": "Oyunun baÅŸlangÄ±Ã§ sahnesinin atmosferik betimlemesi",
+  "playerActions": ["SaldÄ±r", "KaÃ§", "KeÅŸfet" gibi oyunun baÅŸlangÄ±cÄ±nda yapÄ±labilecek 3 eylem],
+  "gameCode": "TAM OYNANABILIR p5.js KODU. SDK KULLANIMI: 1) Oyun baÅŸÄ±nda SDK.registerRemix({ playerSpeed: 5, gravity: 0.5 }) ile remix edilebilir deÄŸiÅŸkenleri tanÄ±mla. 2) SDK.onRemixUpdate((vars) => { playerSpeed = vars.playerSpeed; }) ile deÄŸiÅŸiklikleri dinle. 3) SDK.getVar('playerSpeed') ile deÄŸiÅŸken deÄŸerlerini al. 4) SDK.gameReady() ile oyunun hazÄ±r olduÄŸunu bildir. 5) SDK.gameStart() ile oyunu baÅŸlat. 6) SDK.submitScore(score) ile skor gÃ¶nder. 7) SDK.gameEnd(finalScore) ile oyunu bitir. 8) Sadece saf JavaScript kodu yaz, HTML taglarÄ± OLMASIN. 9) setup() ve draw() fonksiyonlarÄ±nÄ± mutlaka iÃ§ermeli. 10) Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap. SDK global olarak 'window.SDK' Ã¼zerinden eriÅŸilebilir."
+}
+
+Ã–NEMLÄ°: SADECE geÃ§erli JSON dÃ¶ndÃ¼r, baÅŸka hiÃ§bir aÃ§Ä±klama veya metin ekleme. gameCode alanÄ±na p5.js CDN linki ekleme, sadece JavaScript kodu yaz.`;
+
+// --- DYNAMIC MOCK GENERATOR (Preserved) ---
+function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong', description: string) {
+    const r = Math.floor(Math.random() * 255);
+    const g = Math.floor(Math.random() * 255);
+    const b = Math.floor(Math.random() * 255);
+    const words = description.split(' ').slice(0, 3).join(' ');
+    const baseName = words.replace(/[^a-zA-Z0-9 ]/g, '') || "Retro";
+    const generatedName = baseName.length > 2 ? baseName.charAt(0).toUpperCase() + baseName.slice(1) : `Game ${Math.floor(Math.random() * 100)}`;
+    const commonSetup = `let score=0,themeColor,playerColor,gameState='PLAY';function setup(){createCanvas(windowWidth,windowHeight);themeColor=color(${r},${g},${b});playerColor=color(${255 - r},${255 - b},${255 - g});rectMode(CENTER);textAlign(CENTER);frameRate(60);}function windowResized(){resizeCanvas(windowWidth,windowHeight);}`;
+
+    if (genre === 'Snake') {
+        return { gameName: `${generatedName} Snake`, genre: "Classic Arcade", mechanics: ["Grid", "Growth"], levelStructure: "Grid", mantleAssets: ["Apple", "Potion"], difficulty: 5, visualStyle: "Pixelated", startingScene: "Hungry...", playerActions: ["Turn", "Speed"], gameCode: `${commonSetup}let s,scl=20,food;function setup(){createCanvas(windowWidth,windowHeight);themeColor=color(${r},${g},${b});playerColor=color(0,255,100);s=new Snake();pickLocation();frameRate(15);}function pickLocation(){let cols=floor(width/scl),rows=floor(height/scl);food=createVector(floor(random(cols)),floor(random(rows)));food.mult(scl);}function draw(){background(20);if(s.eat(food)){pickLocation();score+=10;}s.death();s.update();s.show();fill(255,0,100);rectMode(CORNER);rect(food.x,food.y,scl,scl);fill(255);textSize(24);textAlign(LEFT);text("Score: "+score,20,30);textAlign(CENTER);}function keyPressed(){if(keyCode===UP_ARROW)s.dir(0,-1);else if(keyCode===DOWN_ARROW)s.dir(0,1);else if(keyCode===RIGHT_ARROW)s.dir(1,0);else if(keyCode===LEFT_ARROW)s.dir(-1,0);}function Snake(){this.x=0;this.y=0;this.xspeed=1;this.yspeed=0;this.total=0;this.tail=[];this.eat=function(pos){let d=dist(this.x,this.y,pos.x,pos.y);if(d<1){this.total++;return true;}else{return false;}};this.dir=function(x,y){this.xspeed=x;this.yspeed=y;};this.death=function(){for(let i=0;i<this.tail.length;i++){let pos=this.tail[i];let d=dist(this.x,this.y,pos.x,pos.y);if(d<1){this.total=0;this.tail=[];score=0;}}};this.update=function(){if(this.total===this.tail.length){for(let i=0;i<this.tail.length-1;i++){this.tail[i]=this.tail[i+1];}}this.tail[this.total-1]=createVector(this.x,this.y);this.x=this.x+this.xspeed*scl;this.y=this.y+this.yspeed*scl;this.x=constrain(this.x,0,width-scl);this.y=constrain(this.y,0,height-scl);};this.show=function(){fill(playerColor);noStroke();rectMode(CORNER);for(let i=0;i<this.tail.length;i++){rect(this.tail[i].x,this.tail[i].y,scl,scl);}rect(this.x,this.y,scl,scl);}}` };
+    } else if (genre === 'Pong') {
+        return { gameName: `${generatedName} Pong`, genre: "Sports", mechanics: ["Paddle", "Ball"], levelStructure: "Court", mantleAssets: ["Ball", "Paddle"], difficulty: 3, visualStyle: "Neon", startingScene: "Match Point", playerActions: ["Up", "Down"], gameCode: `${commonSetup}let lp={x:30,y:0,w:20,h:100},rp={x:0,y:0,w:20,h:100},b={x:0,y:0,s:20,a:0,sp:7};function setup(){createCanvas(windowWidth,windowHeight);rp.x=width-30;rp.y=height/2;lp.y=height/2;b.x=width/2;b.y=height/2;b.a=random(TWO_PI);themeColor=color(${r},${g},${b});rectMode(CENTER);}function draw(){background(10);stroke(255,50);line(width/2,0,width/2,height);noStroke();fill(255);rect(lp.x,lp.y,lp.w,lp.h);fill(themeColor);rect(rp.x,rp.y,rp.w,rp.h);fill(255);ellipse(b.x,b.y,b.s);lp.y=mouseY;rp.y=lerp(rp.y,b.y,0.08);b.x+=cos(b.a)*b.sp;b.y+=sin(b.a)*b.sp;if(b.y<0||b.y>height)b.a*=-1;if(b.x-b.s/2<lp.x+lp.w/2&&b.y>lp.y-lp.h/2&&b.y<lp.y+lp.h/2){b.a=PI-b.a;b.sp+=0.5;}if(b.x+b.s/2>rp.x-rp.w/2&&b.y>rp.y-rp.h/2&&b.y<rp.y+rp.h/2)b.a=PI-b.a;if(b.x<0||b.x>width){b.x=width/2;b.y=height/2;b.sp=7;b.a=random(TWO_PI);}}` };
+    } else if (genre === 'Platformer') {
+        return { gameName: `${generatedName} Jump`, genre: "Platformer", mechanics: ["Jump", "Gravity"], levelStructure: "Vertical", mantleAssets: ["Boots", "Jetpack"], difficulty: 4, visualStyle: "Geometric", startingScene: "Climb...", playerActions: ["Jump", "Left", "Right"], gameCode: `${commonSetup}let p={x:200,y:300,w:30,h:30,vy:0,g:false},grav=0.6,jump=-12,plats=[];for(let i=0;i<6;i++)plats.push({x:i*150,y:100+i*80,w:100,h:20});function draw(){background(20);fill(themeColor);rect(width/2,height/2,width-40,height-40);fill(0,180);rect(width/2,height/2,width,height);fill(playerColor);rect(p.x,p.y,p.w,p.h);p.vy+=grav;p.y+=p.vy;if(keyIsDown(LEFT_ARROW))p.x-=5;if(keyIsDown(RIGHT_ARROW))p.x+=5;fill(255);p.g=false;for(let pl of plats){rect(pl.x+pl.w/2,pl.y+pl.h/2,pl.w,pl.h);if(p.x>pl.x&&p.x<pl.x+pl.w&&p.y+p.h/2>pl.y&&p.y+p.h/2<pl.y+pl.h+20&&p.vy>=0){p.y=pl.y-p.h/2;p.vy=0;p.g=true;}}if((keyIsDown(UP_ARROW)||mouseIsPressed)&&p.g)p.vy=jump;if(p.y>height){p.y=0;p.vy=0;score=0;}fill(255);textSize(20);text("${generatedName} Jump",width/2,40);}` };
+    } else if (genre === 'Collector') {
+        return { gameName: `${generatedName} Rush`, genre: "Collector", mechanics: ["Mouse", "Collect"], levelStructure: "Arena", mantleAssets: ["Magnet"], difficulty: 4, visualStyle: "Minimalist", startingScene: "Collect...", playerActions: ["Move"], gameCode: `${commonSetup}let c=[],px=0,py=0;function draw(){background(20);px=lerp(px,mouseX,0.1);py=lerp(py,mouseY,0.1);fill(playerColor);ellipse(px,py,40);if(frameCount%30==0)c.push({x:random(width),y:random(height),s:random(10,30),l:255});for(let i=c.length-1;i>=0;i--){let o=c[i];o.l-=2;fill(themeColor);stroke(255,o.l);ellipse(o.x,o.y,o.s);if(dist(px,py,o.x,o.y)<20+o.s/2){c.splice(i,1);score+=10;}else if(o.l<=0)c.splice(i,1);}noStroke();fill(255);textSize(24);text("Score: "+score,width/2,50);}` };
+    } else {
+        return { gameName: `${generatedName} Wars`, genre: "Shooter", mechanics: ["Shoot", "Dodge"], levelStructure: "Waves", mantleAssets: ["Laser"], difficulty: 6, visualStyle: "Neon", startingScene: "Defend...", playerActions: ["Shoot", "Move"], gameCode: `${commonSetup}let px,b=[],e=[];function setup(){createCanvas(windowWidth,windowHeight);themeColor=color(${r},${g},${b});rectMode(CENTER);textAlign(CENTER);px=width/2;}function draw(){background(10);fill(255);triangle(px,height-50,px-20,height-20,px+20,height-20);if(keyIsDown(LEFT_ARROW))px-=6;if(keyIsDown(RIGHT_ARROW))px+=6;if(mouseIsPressed&&frameCount%10==0)b.push({x:px,y:height-50});fill(themeColor);for(let i=b.length-1;i>=0;i--){b[i].y-=10;ellipse(b[i].x,b[i].y,10);if(b[i].y<0)b.splice(i,1);}if(frameCount%40==0)e.push({x:random(width),y:-20,s:random(20,50)});for(let i=e.length-1;i>=0;i--){e[i].y+=3;fill(200,50,50);rect(e[i].x,e[i].y,e[i].s,e[i].s);}fill(255);text("${generatedName} Wars",width/2,40);}` };
+    }
+}
+
+export async function POST(request: NextRequest) {
+    let description = "";
+    try {
+        const json = await request.json();
+        description = json.description || "";
+
+        const apiKey = AI_CONFIG.apiKey;
+        if (!apiKey) throw new Error('API Key configuration missing');
+
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "Game Factory",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "model": "google/gemini-2.0-flash-001",
+                "messages": [
+                    { "role": "system", "content": SYSTEM_PROMPT },
+                    { "role": "user", "content": `KullanÄ±cÄ±nÄ±n oyun fikri: ${description}` }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`OpenRouter API Error: ${response.status} - ${errorText}`);
+        }
+
+        const completion = await response.json();
+        const text = completion.choices[0]?.message?.content || "";
+        if (!text) throw new Error("Empty response from AI");
+
+        let gameData;
+        try {
+            const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            gameData = JSON.parse(cleanedText);
+        } catch {
+            return NextResponse.json({ error: 'AI yanÄ±tÄ± JSON formatÄ±nda deÄŸil', raw: text }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, gameData, isMock: false });
+    } catch (error) {
+        console.error('API Error:', error);
+
+        let genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong' = 'Shooter';
+        const desc = description.toLowerCase();
+        if (desc.includes('jump') || desc.includes('zÄ±pla') || desc.includes('platform')) genre = 'Platformer';
+        else if (desc.includes('collect') || desc.includes('topla')) genre = 'Collector';
+        else if (desc.includes('snake') || desc.includes('yÄ±lan')) genre = 'Snake';
+        else if (desc.includes('pong') || desc.includes('tennis')) genre = 'Pong';
+
+        const mockGame = generateMockGame(genre, description);
+        return NextResponse.json({
+            success: true,
+            gameData: mockGame,
+            isMock: true,
+            note: "Using Dynamic Mock due to API Error"
+        });
+    }
+}
+
+
+========================================
+FILE: src/components/GamePlayer.tsx
+========================================
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface GameData {
+    gameName: string;
+    genre: string;
+    mechanics: string[];
+    levelStructure: string;
+    mantleAssets: string[];
+    difficulty: number;
+    visualStyle: string;
+    startingScene: string;
+    playerActions: string[];
+    gameCode: string;
+}
+
+interface GamePlayerProps {
+    gameData: GameData;
+    onClose?: () => void;
+    isInline?: boolean;
+}
+
+export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerProps) {
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const [logs, setLogs] = useState<string[]>([]);
+    const [health, setHealth] = useState(100);
+    const [energy, setEnergy] = useState(100);
+    const [mETH, setmETH] = useState(0);
+
+    useEffect(() => {
+        setLogs([`INITIALIZING: ${gameData.gameName}`, `CLASS: ${gameData.genre}`, `VISUALS: ${gameData.visualStyle}`]);
+
+        // Validate gameCode
+        if (!gameData.gameCode || gameData.gameCode.trim() === '') {
+            setHasError(true);
+            setIsLoading(false);
+            return;
+        }
+
+        // Simulate loading time for iframe initialization
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 1500);
+
+        return () => clearTimeout(timer);
+    }, [gameData]);
+
+    const handleAction = (action: string) => {
+        const newLog = `> ${action} executed`;
+        setLogs(prev => [newLog, ...prev].slice(0, 6));
+
+        const outcome = Math.random();
+        if (outcome > 0.7) {
+            setmETH(prev => prev + 0.1);
+            setLogs(prev => [`> REWARD: 0.1 mETH acquired`, ...prev]);
+        } else if (outcome < 0.2) {
+            setHealth(prev => Math.max(0, prev - 10));
+            setLogs(prev => [`> WARNING: Hull integrity -10%`, ...prev]);
+        }
+
+        setEnergy(prev => Math.max(0, prev - 5));
+    };
+
+    const generateIframeSrcDoc = () => {
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: #000; 
+        }
+        canvas { 
+            display: block; 
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+    <script type="module">
+        // Import GameFactorySDK (inline for now, can be external later)
+        ${getSDKBundle()}
+        
+        // Expose SDK globally for game code
+        window.SDK = SDK;
+        
+        // Load Farcade compatibility shim for legacy code
+        ${getFarcadeShim()}
+    </script>
+    <script>
+        ${gameData.gameCode}
+    </script>
+</body>
+</html>`;
+    };
+
+    // Bundle SDK for iframe injection
+    const getSDKBundle = () => {
+        return `
+            // Simplified Game Factory SDK
+            class GameFactorySDK {
+                constructor() {
+                    this.vars = {};
+                    this.updateCallback = () => {};
+                    this.score = 0;
+                    this.isReady = false;
+                    this.initMessageListener();
+                }
+
+                // 1. REGISTER REMIX VARIABLES
+                registerRemix(defaultVars) {
+                    this.vars = defaultVars;
+                    this.sendMessage("REGISTER_SCHEMA", defaultVars);
+                    console.log('[SDK] Remix registered:', defaultVars);
+                }
+
+                // 2. LISTEN FOR UPDATES
+                onRemixUpdate(callback) {
+                    this.updateCallback = callback;
+                }
+
+                // 3. GET VARIABLE
+                getVar(key) {
+                    return this.vars[key];
+                }
+
+                // 4. GET ALL VARIABLES
+                getAllVars() {
+                    return { ...this.vars };
+                }
+
+                // 5. SUBMIT SCORE
+                submitScore(score) {
+                    this.score = score;
+                    this.sendMessage("SUBMIT_SCORE", { score });
+                    console.log('[SDK] Score:', score);
+                }
+
+                // 5b. ADD TO SCORE
+                addScore(value) {
+                    this.score += value;
+                    console.log('[SDK] Score added:', value, '-> Total:', this.score);
+                    return this.score;
+                }
+
+                // 5c. SET SCORE
+                setScore(value) {
+                    this.score = value;
+                    console.log('[SDK] Score set:', value);
+                }
+
+                // 5d. GET SCORE
+                getScore() {
+                    return this.score;
+                }
+
+
+                // 6. LIFECYCLE - Ready
+                gameReady() {
+                    this.isReady = true;
+                    this.sendMessage("GAME_READY", true);
+                    console.log('[SDK] Ready');
+                }
+
+                // 7. LIFECYCLE - Start
+                gameStart() {
+                    this.sendMessage("GAME_START", true);
+                    console.log('[SDK] Started');
+                }
+
+                // 8. LIFECYCLE - End
+                gameEnd(finalScore) {
+                    const scoreToSubmit = finalScore ?? this.score;
+                    this.sendMessage("GAME_END", { score: scoreToSubmit });
+                    console.log('[SDK] Ended:', scoreToSubmit);
+                }
+
+                // INTERNAL: Send message
+                sendMessage(type, payload) {
+                    try {
+                        window.parent.postMessage({ type, payload }, "*");
+                    } catch (e) {
+                        console.error('[SDK] Message failed:', e);
+                    }
+                }
+
+                // INTERNAL: Listen for messages
+                initMessageListener() {
+                    window.addEventListener("message", (event) => {
+                        const { type, payload } = event.data || {};
+
+                        if (type === "UPDATE_REMIX") {
+                            this.vars = { ...this.vars, ...payload };
+                            this.updateCallback(this.vars);
+                            console.log('[SDK] Updated:', payload);
+                        } else if (type === "REQUEST_STATE") {
+                            this.sendMessage("STATE_RESPONSE", {
+                                vars: this.vars,
+                                score: this.score,
+                                isReady: this.isReady
+                            });
+                        } else if (type === "RESET_GAME") {
+                            this.score = 0;
+                            console.log('[SDK] Reset');
+                        }
+                    });
+                }
+            }
+
+            // Create singleton
+            const SDK = new GameFactorySDK();
+            window.SDK = SDK;
+        `;
+    };
+
+    const getFarcadeShim = () => {
+        return `
+            // Farcade compatibility shim (uses simplified SDK)
+            window.farcade = {
+                init: () => {
+                    SDK.gameReady();
+                    return Promise.resolve();
+                },
+                gameStart: () => {
+                    SDK.gameStart();
+                    return Promise.resolve();
+                },
+                gameEnd: (score) => {
+                    SDK.gameEnd(score);
+                    return Promise.resolve();
+                },
+                submitScore: (score) => {
+                    SDK.submitScore(score);
+                    return Promise.resolve(true);
+                },
+                getAssets: () => Promise.resolve([])
+            };
+        `;
+    };
+
+    return (
+        <div className={`flex flex-col h-full w-full bg-[#050505] ${!isInline ? 'relative' : ''}`}>
+            {/* GAME CANVAS - 16:9 Aspect Ratio with Mantle Neon Glow */}
+            <div className={`relative flex-1 flex flex-col justify-center items-center p-4 ${isInline ? '' : 'p-8'}`}>
+
+                {/* 16:9 Container with Neon Glow */}
+                <div className="relative w-full max-w-6xl aspect-video">
+                    {/* Mantle Neon Glow Effect */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-cyan-500 to-purple-600 rounded-2xl blur-xl opacity-75 animate-pulse"></div>
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-cyan-400 to-purple-500 rounded-2xl blur-md opacity-50"></div>
+
+                    {/* Game Container */}
+                    <div className="relative bg-black rounded-2xl overflow-hidden border border-purple-500/30 shadow-2xl h-full">
+
+                        {/* Loading State */}
+                        {isLoading && (
+                            <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6">
+                                <div className="relative">
+                                    {/* Animated Rings */}
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                        className="w-24 h-24 border-4 border-transparent border-t-purple-500 border-r-cyan-500 rounded-full"
+                                    />
+                                    <motion.div
+                                        animate={{ rotate: -360 }}
+                                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                        className="absolute inset-2 w-20 h-20 border-4 border-transparent border-b-purple-400 border-l-cyan-400 rounded-full"
+                                    />
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                        className="absolute inset-4 w-16 h-16 border-4 border-transparent border-t-purple-300 border-r-cyan-300 rounded-full"
+                                    />
+                                </div>
+                                <div className="text-center space-y-2">
+                                    <h3 className="text-xl font-bold text-white tracking-tight">Loading Game Engine</h3>
+                                    <p className="text-sm text-purple-400 font-mono animate-pulse">Initializing Farcade SDK...</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Error State */}
+                        {hasError && !isLoading && (
+                            <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6 p-8">
+                                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border-2 border-red-500/30">
+                                    <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <div className="text-center space-y-2 max-w-md">
+                                    <h3 className="text-xl font-bold text-red-400">Game Code Missing</h3>
+                                    <p className="text-sm text-gray-400 font-mono">
+                                        The AI-generated game code is empty or invalid. Please try generating a new game.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Game Iframe */}
+                        {!hasError && gameData.gameCode && (
+                            <iframe
+                                srcDoc={generateIframeSrcDoc()}
+                                className="absolute inset-0 w-full h-full border-0"
+                                title={`${gameData.gameName}`}
+                                sandbox="allow-scripts"
+                                onLoad={() => setIsLoading(false)}
+                            />
+                        )}
+
+                        {/* Overlays (HP/Energy) - Only show when game is loaded */}
+                        {!isLoading && !hasError && (
+                            <div className="absolute top-4 left-6 right-6 flex justify-between items-start pointer-events-none z-10">
+                                {/* Status Bars */}
+                                <div className="flex flex-col gap-2 w-48">
+                                    {/* HP */}
+                                    <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
+                                        <motion.div
+                                            animate={{ width: `${health}%` }}
+                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-400"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest pl-1">Hull Integrity {health}%</span>
+
+                                    {/* Energy */}
+                                    <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
+                                        <motion.div
+                                            animate={{ width: `${energy}%` }}
+                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold text-cyan-500 uppercase tracking-widest pl-1">Energy Cells {energy}%</span>
+                                </div>
+
+                                {/* Currency / Score */}
+                                <div className="flex items-center gap-3 bg-black/40 backdrop-blur border border-white/10 px-4 py-2 rounded-lg">
+                                    <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"></div>
+                                    <span className="font-mono text-lg font-bold text-gray-200">{mETH.toFixed(2)}</span>
+                                    <span className="font-mono text-xs text-gray-500">mETH</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Close Button (If Modal) */}
+                        {!isInline && (
+                            <button
+                                onClick={onClose}
+                                className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-white/10 border border-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* CONTROLLER AREA (Below Canvas) */}
+            <div className="bg-[#0f0f11] border-t border-white/5 p-6 z-20">
+                <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                    {/* Logs Terminal */}
+                    <div className="w-full md:w-64 h-24 bg-black/40 border border-white/5 rounded-lg p-3 font-mono text-[10px] text-green-400 overflow-hidden flex flex-col justify-end">
+                        <AnimatePresence>
+                            {logs.map((log, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="truncate">
+                                    {log}
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                        <div className="animate-pulse">_</div>
+                    </div>
+
+                    {/* Controller Buttons */}
+                    <div className="flex-1 flex justify-center gap-4">
+                        {gameData.playerActions.map((action, i) => (
+                            <button
+                                key={i}
+                                onClick={() => handleAction(action)}
+                                disabled={energy < 5 || health <= 0 || isLoading || hasError}
+                                className="group relative w-32 h-16 bg-[#1a1a1d] hover:bg-[#252529] border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 active:border-purple-500/50 disabled:opacity-30 disabled:pointer-events-none"
+                            >
+                                <div className="absolute top-0 inset-x-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <span className="font-bold text-gray-200 text-sm">{action}</span>
+                                <span className="text-[9px] font-mono text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-wider">Button {['A', 'B', 'X'][i]}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/components/GameDescriptionForm.tsx
+========================================
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { toast } from 'react-hot-toast';
+import { GAME_FACTORY_ADDRESS, GAME_FACTORY_ABI } from '@/config/wagmi';
+import { GamePlayer } from './GamePlayer';
+
+interface GameData {
+    gameName: string;
+    genre: string;
+    mechanics: string[];
+    levelStructure: string;
+    mantleAssets: string[];
+    difficulty: number;
+    visualStyle: string;
+    startingScene: string;
+    playerActions: string[];
+    gameCode: string;
+}
+
+export function GameDescriptionForm() {
+    const { isConnected } = useAccount();
+    const [description, setDescription] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [gameData, setGameData] = useState<GameData | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+
+    const {
+        data: hash,
+        isPending: isMinting,
+        writeContract,
+        error: mintError
+    } = useWriteContract();
+
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+        hash,
+    });
+
+    useEffect(() => {
+        if (mintError) {
+            toast.error(`Mint Error: ${mintError.message.slice(0, 50)}...`);
+        }
+    }, [mintError]);
+
+    useEffect(() => {
+        if (isConfirmed) {
+            toast.success('Game deployed to Mantle Network!', { icon: 'ğŸš€' });
+        }
+    }, [isConfirmed]);
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!description.trim()) return;
+
+        setIsGenerating(true);
+        setError(null);
+        setGameData(null);
+
+        try {
+            const response = await fetch('/api/generate-game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Generation failed');
+
+            setGameData(data.gameData);
+
+            if (data.isMock) {
+                toast("AI Servisi MeÅŸgul: SimÃ¼lasyon Modu Aktif", {
+                    icon: 'âš ï¸',
+                    style: { background: '#333', color: '#fbbf24' }
+                });
+            } else {
+                toast.success('System Online: AI Game Generated.');
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'System Failure');
+            toast.error('AI Processing Failed');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleMint = () => {
+        if (!gameData || !isConnected) {
+            if (!isConnected) toast.error('Wallet link required.');
+            return;
+        }
+
+        toast.loading('Deploying to Mantle...', { id: 'mint' });
+        writeContract({
+            address: GAME_FACTORY_ADDRESS,
+            abi: GAME_FACTORY_ABI,
+            functionName: 'mintGame',
+            args: [gameData.gameName, JSON.stringify(gameData)],
+        }, {
+            onSuccess: () => {
+                toast.dismiss('mint');
+                toast.success('Transaction Signed');
+            },
+            onError: () => toast.dismiss('mint')
+        });
+    };
+
+    const examplePrompts = [
+        "Space Shooter with Token Rewards",
+        "Cyberpunk RPG Adventure",
+        "Physics Puzzle Platformer",
+        "Survival Zombie Strategy",
+    ];
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full font-sans text-slate-200">
+            {/* LEFT COLUMN: DESIGN LAB (Bento Layout) */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+
+                {/* CARD 1: MAIN INPUT - Glassmorphism */}
+                <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl group transition-all hover:border-white/10">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 opacity-50"></div>
+
+                    <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                    <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                </div>
+                                Design Lab
+                            </h2>
+                            <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-purple-300 bg-purple-500/10 rounded-full border border-purple-500/20">v2.0.1 Beta</span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Directive Input</label>
+                            <div className="relative group/input">
+                                <textarea
+                                    id="userInput"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="// Initialize game parameters...\n// E.g. Pixel Art Platformer with double-jump mechanics..."
+                                    className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-5 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
+                                />
+                                <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
+                                    {description.length} chars
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            id="submit-button"
+                            onClick={(e) => handleSubmit(e)}
+                            disabled={!description.trim() || isGenerating}
+                            className={`w-full py-4 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-3 relative overflow-hidden ${isGenerating
+                                ? 'bg-neutral-800 text-gray-400 cursor-not-allowed border border-white/5'
+                                : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] hover:shadow-purple-500/20'
+                                }`}
+                        >
+                            {isGenerating && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
+                            )}
+                            {isGenerating ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                                    <span className="font-mono text-xs">PROCESSING...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>INITIALIZE ENGINE</span>
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* CARD 2: SUGGESTIONS GRID */}
+                <div className="grid grid-cols-2 gap-4">
+                    {examplePrompts.map((prompt, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setDescription(prompt)}
+                            className="group relative p-4 bg-neutral-900/40 border border-white/5 hover:border-white/10 rounded-2xl text-left transition-all hover:bg-white/[0.03]"
+                        >
+                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            </div>
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mb-3 text-gray-400 group-hover:text-white group-hover:bg-white/10 transition-colors font-mono text-xs">
+                                0{i + 1}
+                            </div>
+                            <p className="text-xs font-medium text-gray-400 group-hover:text-gray-200 line-clamp-2 leading-relaxed">
+                                {prompt}
+                            </p>
+                        </button>
+                    ))}
+                </div>
+
+                {/* CARD 3: SPECS (Conditional) */}
+                {gameData && (
+                    <div className="bg-neutral-900/60 border border-white/5 rounded-3xl p-6 backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-500">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Technical Specs</h3>
+                        <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                            <div>
+                                <div className="text-[10px] text-gray-500 uppercase">Class</div>
+                                <div className="text-sm font-bold text-white mt-0.5">{gameData.genre}</div>
+                            </div>
+                            <div>
+                                <div className="text-[10px] text-gray-500 uppercase">Style</div>
+                                <div className="text-sm font-bold text-white mt-0.5">{gameData.visualStyle}</div>
+                            </div>
+                            <div className="col-span-2">
+                                <div className="text-[10px] text-gray-500 uppercase mb-1">Difficulty Matrix</div>
+                                <div className="h-2 bg-black/50 rounded-full overflow-hidden flex">
+                                    {[...Array(10)].map((_, i) => (
+                                        <div key={i} className={`flex-1 border-r border-black/20 last:border-0 ${i < gameData.difficulty ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'bg-transparent'}`}></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* RIGHT COLUMN: LIVE ENGINE */}
+            <div className={`lg:col-span-7 relative bg-[#050505] rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-700 ${isGenerating ? 'ring-2 ring-purple-500/50' : ''}`}>
+
+                {/* Status Bar */}
+                <div className="h-14 border-b border-white/5 bg-white/[0.02] flex items-center justify-center px-6">
+                    <div className="flex items-center gap-3">
+                        <div className={`relative w-2 h-2 rounded-full ${gameData ? 'bg-emerald-500' : (isGenerating ? 'bg-yellow-500 animate-pulse' : 'bg-red-500')}`}>
+                            {gameData && <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>}
+                        </div>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">
+                            {isGenerating ? 'PROCESSING STREAM...' : (gameData ? 'SYSTEM ONLINE' : 'STANDBY MODE')}
+                        </span>
+                    </div>
+
+                    {gameData && (
+                        <div className="absolute right-6 flex gap-2">
+                            <button onClick={handleMint} disabled={isMinting} className="h-8 px-4 flex items-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded text-[10px] font-bold text-purple-300 uppercase tracking-wide transition-colors">
+                                {isMinting ? 'Deploying...' : 'Deploy to Chain'}
+                            </button>
+                            <button onClick={() => setIsPlaying(true)} className="h-8 w-8 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded text-gray-300 hover:text-white transition-colors">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Canvas Container */}
+                <div id="responseArea" className="flex-1 relative bg-[url('/grid-dark.svg')] bg-[length:40px_40px] bg-center flex items-center justify-center">
+
+                    {/* Visual Loading State */}
+                    {isGenerating && (
+                        <div id="loading-overlay" className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center space-y-6 animate-in fade-in duration-300">
+                            <div className="relative w-24 h-24">
+                                <div className="absolute inset-0 border-t-2 border-purple-500 rounded-full animate-spin"></div>
+                                <div className="absolute inset-2 border-r-2 border-blue-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
+                                <div className="absolute inset-4 border-b-2 border-pink-500 rounded-full animate-spin [animation-duration:1s]"></div>
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-bold text-white tracking-tight">Generating Neural Assets</h3>
+                                <p className="text-sm text-purple-400 font-mono">Resolving physics engine...</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Error State */}
+                    {error && (
+                        <div id="error-message" className="absolute inset-0 z-20 bg-red-950/20 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
+                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
+                                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <p className="text-red-400 font-mono text-sm max-w-md">{error}</p>
+                        </div>
+                    )}
+
+                    {gameData ? (
+                        <GamePlayer gameData={gameData} isInline={true} />
+                    ) : (
+                        !isGenerating && (
+                            <div className="text-center opacity-20 hover:opacity-100 transition-opacity duration-500 select-none">
+                                <div className="text-6xl mb-4 font-thin tracking-tighter text-white">GAME<span className="font-bold text-purple-500">OS</span></div>
+                                <p className="font-mono text-xs tracking-[0.3em] text-white">READY FOR INITIALIZATION</p>
+                            </div>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* FULLSCREEN MODAL */}
+            {isPlaying && gameData && (
+                <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 lg:p-12 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="w-full h-full relative bg-[#050505] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden ring-1 ring-white/5">
+                        <GamePlayer gameData={gameData} isInline={false} onClose={() => setIsPlaying(false)} />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/components/ConnectButton.tsx
+========================================
+
+'use client';
+
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
+import { mantleMainnet } from '@/config/wagmi';
+import { useState, useEffect } from 'react';
+
+export function ConnectButton() {
+    const { address, isConnected, chain } = useAccount();
+    const { connect, connectors, isPending } = useConnect();
+    const { disconnect } = useDisconnect();
+    const { switchChain } = useSwitchChain();
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <button className="relative px-6 py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 opacity-50 cursor-not-allowed">
+                <span className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
+                    Loading...
+                </span>
+            </button>
+        );
+    }
+
+    // Check if connected to wrong network
+    const isWrongNetwork = isConnected && chain?.id !== mantleMainnet.id;
+
+    if (isWrongNetwork) {
+        return (
+            <button
+                onClick={() => switchChain({ chainId: mantleMainnet.id })}
+                className="relative px-6 py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 transition-all duration-300 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-105"
+            >
+                <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Switch to Mantle
+                </span>
+            </button>
+        );
+    }
+
+    if (isConnected && address) {
+        return (
+            <div className="relative">
+                <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="relative px-6 py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 transition-all duration-300 shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:scale-105"
+                >
+                    <span className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                        {address.slice(0, 6)}...{address.slice(-4)}
+                    </span>
+                </button>
+
+                {showDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl z-50 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-gray-700/50">
+                            <p className="text-xs text-gray-400">Connected to</p>
+                            <p className="text-sm font-medium text-cyan-400">Mantle Mainnet</p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                disconnect();
+                                setShowDropdown(false);
+                            }}
+                            className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors duration-200 flex items-center gap-2"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Disconnect
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                disabled={isPending}
+                className="relative px-6 py-3 font-semibold text-white rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+                <span className="flex items-center gap-2">
+                    {isPending ? (
+                        <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Connecting...
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Connect Wallet
+                        </>
+                    )}
+                </span>
+            </button>
+
+            {showDropdown && !isPending && (
+                <div className="absolute right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-gray-700/50 shadow-2xl z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-700/50">
+                        <p className="text-sm font-medium text-white">Select Wallet</p>
+                        <p className="text-xs text-gray-400">Connect to Mantle Network</p>
+                    </div>
+                    <div className="p-2">
+                        {connectors.map((connector) => (
+                            <button
+                                key={connector.uid}
+                                onClick={() => {
+                                    connect({ connector });
+                                    setShowDropdown(false);
+                                }}
+                                className="w-full px-4 py-3 text-left rounded-lg hover:bg-purple-500/10 transition-colors duration-200 flex items-center gap-3 group"
+                            >
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center group-hover:from-purple-500/30 group-hover:to-cyan-500/30 transition-colors">
+                                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                </div>
+                                <span className="text-white font-medium">{connector.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/components/ProfileButton.tsx
+========================================
+
+'use client';
+
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
+import { mantleMainnet } from '@/config/wagmi';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+export function ProfileButton() {
+    const { address, isConnected, chain } = useAccount();
+    const { connect, connectors, isPending } = useConnect();
+    const { disconnect } = useDisconnect();
+    const { switchChain } = useSwitchChain();
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (showDropdown && !target.closest('.profile-dropdown-container')) {
+                setShowDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showDropdown]);
+
+    if (!mounted) {
+        return (
+            <div className="relative px-6 py-3 font-semibold text-white rounded-xl bg-gray-200 opacity-50 cursor-not-allowed">
+                <span className="flex items-center gap-2">
+                    Loading...
+                </span>
+            </div>
+        );
+    }
+
+    // Check if connected to wrong network
+    const isWrongNetwork = isConnected && chain?.id !== mantleMainnet.id;
+
+    if (isWrongNetwork) {
+        return (
+            <button
+                onClick={() => switchChain({ chainId: mantleMainnet.id })}
+                className="relative px-6 py-3 font-bold text-white rounded-2xl bg-red-500 hover:bg-red-400 transition-all shadow-[0_4px_0_0_#b91c1c] active:shadow-none active:translate-y-[4px]"
+            >
+                <span className="flex items-center gap-2 uppercase tracking-wide">
+                    WRONG NETWORK
+                </span>
+            </button>
+        );
+    }
+
+    if (isConnected && address) {
+        // Generate a simple avatar based on address
+        const getAvatarColor = (addr: string) => {
+            const colors = [
+                'from-purple-500 to-pink-500',
+                'from-cyan-500 to-blue-500',
+                'from-green-500 to-emerald-500',
+                'from-orange-500 to-red-500',
+                'from-indigo-500 to-purple-500',
+            ];
+            const index = parseInt(addr.slice(2, 4), 16) % colors.length;
+            return colors[index];
+        };
+
+        return (
+            <div className="relative profile-dropdown-container">
+                <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="flex items-center gap-3 px-2 py-1 hover:bg-gray-100 rounded-2xl transition-all duration-300 group ring-2 ring-transparent hover:ring-gray-200"
+                >
+                    {/* Avatar */}
+                    <div className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${getAvatarColor(address)} flex items-center justify-center shadow-sm`}>
+                        <span className="text-white font-bold text-sm">
+                            {address.slice(2, 4).toUpperCase()}
+                        </span>
+                    </div>
+
+                    {/* Address and status */}
+                    <div className="hidden sm:block text-left mr-2">
+                        <span className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                            {address.slice(0, 6)}...
+                        </span>
+                    </div>
+                </button>
+
+                {showDropdown && (
+                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl border-2 border-gray-200 shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        {/* Profile Header */}
+                        <div className="p-6 bg-blue-50 border-b-2 border-gray-100">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${getAvatarColor(address)} flex items-center justify-center shadow-lg border-4 border-white`}>
+                                    <span className="text-white font-bold text-2xl">
+                                        {address.slice(2, 4).toUpperCase()}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p className="text-lg font-bold text-slate-800">Oyuncu</p>
+                                    <p className="text-sm font-mono font-medium text-slate-500">
+                                        {address.slice(0, 8)}...{address.slice(-6)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="p-2 space-y-1">
+                            <Link href="/profil" onClick={() => setShowDropdown(false)}>
+                                <button className="w-full px-4 py-3 text-left rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-3 font-bold text-slate-600 hover:text-blue-500 group border-2 border-transparent hover:border-blue-200">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-500 flex items-center justify-center">
+                                        ğŸ‘¤
+                                    </div>
+                                    Profilim
+                                </button>
+                            </Link>
+
+                            <Link href="/profil" onClick={() => setShowDropdown(false)}>
+                                <button className="w-full px-4 py-3 text-left rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-3 font-bold text-slate-600 hover:text-green-500 group border-2 border-transparent hover:border-green-200">
+                                    <div className="w-10 h-10 rounded-xl bg-green-100 text-green-500 flex items-center justify-center">
+                                        ğŸ®
+                                    </div>
+                                    OyunlarÄ±m
+                                </button>
+                            </Link>
+                        </div>
+
+                        {/* Disconnect Button */}
+                        <div className="p-2 border-t-2 border-gray-100">
+                            <button
+                                onClick={() => {
+                                    disconnect();
+                                    setShowDropdown(false);
+                                }}
+                                className="w-full px-4 py-3 text-left rounded-xl hover:bg-red-50 text-red-500 hover:text-red-600 font-bold transition-colors flex items-center gap-3"
+                            >
+                                <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                                    ğŸšª
+                                </div>
+                                Ã‡Ä±kÄ±ÅŸ Yap
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Not Connected State - Duolingo Style Button
+    return (
+        <div className="relative profile-dropdown-container">
+            <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                disabled={isPending}
+                className="relative px-8 py-3 font-bold text-white tracking-wider uppercase rounded-2xl bg-[#1CB0F6] hover:bg-[#1899d6] transition-all shadow-[0_4px_0_0_#1899d6] active:shadow-none active:translate-y-[4px] disabled:opacity-50"
+            >
+                {isPending ? 'BAÄLANIYOR...' : 'CÃœZDAN BAÄLA'}
+            </button>
+
+            {showDropdown && !isPending && (
+                <div className="absolute right-0 mt-4 w-72 bg-white rounded-2xl border-2 border-gray-200 shadow-xl z-50 overflow-hidden">
+                    <div className="px-6 py-4 border-b-2 border-gray-100 bg-gray-50">
+                        <p className="text-base font-extrabold text-slate-700 uppercase tracking-wide">CÃ¼zdan SeÃ§</p>
+                    </div>
+                    <div className="p-2 space-y-1">
+                        {connectors.map((connector) => (
+                            <button
+                                key={connector.uid}
+                                onClick={() => {
+                                    connect({ connector });
+                                    setShowDropdown(false);
+                                }}
+                                className="w-full px-4 py-4 text-left rounded-xl hover:bg-gray-100 transition-all border-2 border-gray-100 hover:border-blue-200 flex items-center gap-4 group"
+                            >
+                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                                    ğŸ”Œ
+                                </div>
+                                <span className="font-bold text-slate-700 group-hover:text-blue-500">{connector.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/components/MethBalance.tsx
+========================================
+
+'use client';
+
+import { useAccount, useReadContracts } from 'wagmi';
+import { METH_TOKEN_ADDRESS, ERC20_ABI, mantleMainnet } from '@/config/wagmi';
+import { formatUnits } from 'viem';
+import { useState, useEffect } from 'react';
+
+export function MethBalance() {
+    const { address, isConnected, chain } = useAccount();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        setMounted(true);
+    }, []);
+
+    const { data, isLoading, isError } = useReadContracts({
+        contracts: [
+            {
+                address: METH_TOKEN_ADDRESS,
+                abi: ERC20_ABI,
+                functionName: 'balanceOf',
+                args: address ? [address] : undefined,
+                chainId: mantleMainnet.id,
+            },
+            {
+                address: METH_TOKEN_ADDRESS,
+                abi: ERC20_ABI,
+                functionName: 'decimals',
+                chainId: mantleMainnet.id,
+            },
+        ],
+        query: {
+            enabled: !!address && isConnected && chain?.id === mantleMainnet.id,
+        },
+    });
+
+    if (!mounted) {
+        return null;
+    }
+
+    if (!isConnected || chain?.id !== mantleMainnet.id) {
+        return null;
+    }
+
+    const balance = data?.[0]?.result as bigint | undefined;
+    const decimals = data?.[1]?.result as number | undefined;
+
+    const formattedBalance = balance && decimals
+        ? parseFloat(formatUnits(balance, decimals)).toFixed(4)
+        : '0.0000';
+
+    return (
+        <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-75" />
+            <div className="relative bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6 hover:border-cyan-500/50 transition-all duration-300">
+                <div className="flex items-center gap-4">
+                    {/* mETH Icon */}
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full blur-md opacity-50" />
+                        <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <span className="text-2xl font-bold text-white">m</span>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <span className="text-sm text-gray-400 mb-1">mETH Balance</span>
+                        {isLoading ? (
+                            <div className="flex items-center gap-2">
+                                <div className="w-24 h-8 bg-gray-700/50 rounded-lg animate-pulse" />
+                            </div>
+                        ) : isError ? (
+                            <span className="text-red-400 text-sm">Error loading balance</span>
+                        ) : (
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                                    {formattedBalance}
+                                </span>
+                                <span className="text-lg text-gray-400 font-medium">mETH</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Decorative elements */}
+                <div className="absolute top-2 right-2 flex gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse delay-100" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse delay-200" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+========================================
+FILE: src/components/Providers.tsx
+========================================
+
+'use client';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WagmiProvider } from 'wagmi';
+import { config } from '@/config/wagmi';
+import { ReactNode } from 'react';
+import { Toaster } from 'react-hot-toast';
+
+const queryClient = new QueryClient();
+
+export function Providers({ children }: { children: ReactNode }) {
+    return (
+        <WagmiProvider config={config}>
+            <QueryClientProvider client={queryClient}>
+                {children}
+                <Toaster position="bottom-right" />
+            </QueryClientProvider>
+        </WagmiProvider>
+    );
+}
+
+
+========================================
+FILE: src/providers/Web3Provider.tsx
+========================================
+
+'use client';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { WagmiProvider } from 'wagmi';
+import { config } from '@/config/wagmi';
+import { useState } from 'react';
+
+export function Web3Provider({ children }: { children: React.ReactNode }) {
+    const [queryClient] = useState(() => new QueryClient());
+
+    return (
+        <WagmiProvider config={config}>
+            <QueryClientProvider client={queryClient}>
+                {children}
+            </QueryClientProvider>
+        </WagmiProvider>
+    );
+}
+
+
+========================================
+FILE: src/config/wagmi.ts
+========================================
+
+import { http, createConfig } from 'wagmi';
+import { mantle } from 'wagmi/chains';
+import { injected, walletConnect } from 'wagmi/connectors';
+
+// Mantle Mainnet Chain Configuration
+export const mantleMainnet = {
+  ...mantle,
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.mantle.xyz'],
+    },
+    public: {
+      http: ['https://rpc.mantle.xyz'],
+    },
+  },
+} as const;
+
+// Game Factory Contract Address (Placeholder)
+export const GAME_FACTORY_ADDRESS = '0xb411267879e6D5409C8f6B66498AfcE746F46A14' as const;
+
+// mETH Token Contract Address on Mantle
+export const METH_TOKEN_ADDRESS = '0xcDA86A272531e8640cD7F1a92c01839911B90bb0' as const;
+
+// Game Factory ABI for creating games
+export const GAME_FACTORY_ABI = [
+  {
+    name: 'mintGame',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'name', type: 'string' },
+      { name: 'metadata', type: 'string' }
+    ],
+    outputs: [{ name: 'tokenId', type: 'uint256' }],
+  }
+] as const;
+
+export const ERC20_ABI = [
+  {
+    name: 'balanceOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'decimals',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+  {
+    name: 'symbol',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'string' }],
+  },
+] as const;
+
+export const config = createConfig({
+  chains: [mantleMainnet],
+  connectors: [
+    injected(),
+    walletConnect({
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
+    }),
+  ],
+  transports: {
+    [mantleMainnet.id]: http('https://rpc.mantle.xyz'),
+  },
+});
+
+declare module 'wagmi' {
+  interface Register {
+    config: typeof config;
+  }
+}
+
+
+========================================
+FILE: src/config/ai.ts
+========================================
+
+// AI Configuration
+// IMPORTANT: Never commit this file with real API keys!
+// Use environment variables in production
+export const AI_CONFIG = {
+    apiKey: process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '',
+} as const;
+
+
+========================================
+FILE: src/sdk/index.ts
+========================================
+
+/**
+ * Game Factory SDK - Main Entry Point
+ * 
+ * Usage:
+ * ```typescript
+ * import SDK from '@/sdk';
+ * 
+ * // Initialize SDK
+ * await SDK.init({ gameId: 'my-game', debug: true });
+ * 
+ * // Define moddable schema (Remix.gg style)
+ * SDK.schema.defineSchema([
+ *   { key: 'speed', type: 'range', label: 'Player Speed', defaultValue: 5, min: 1, max: 10 },
+ *   { key: 'gravity', type: 'number', label: 'Gravity', defaultValue: 0.5 }
+ * ]);
+ * 
+ * // Map assets for remixing
+ * SDK.assets.mapAssets([
+ *   { originalUrl: '/player.png', remixUrl: '/custom-player.png', type: 'sprite' }
+ * ]);
+ * 
+ * // Listen to variable updates
+ * SDK.schema.onUpdate((key, value) => {
+ *   console.log(`${key} changed to ${value}`);
+ * });
+ * 
+ * // Start game
+ * await SDK.lifecycle.start();
+ * 
+ * // Submit score
+ * await SDK.score.send({ value: 1000 });
+ * 
+ * // End game
+ * await SDK.lifecycle.finish(finalScore);
+ * ```
+ */
+
+// Core
+export { GameFactorySDK, getSDK } from './core/GameFactorySDK';
+export type { SDKConfig, GameState, ScoreData } from './core/types';
+
+// Core Modules
+export { ScoreModule } from './modules/ScoreModule';
+export { LifecycleModule } from './modules/LifecycleModule';
+
+// Remix Modules
+export { SchemaModule } from './modules/SchemaModule';
+export { AssetsModule } from './modules/AssetsModule';
+export type { SchemaProperty, GameSchema } from './modules/SchemaModule';
+export type { AssetMapping, AssetManifest } from './modules/AssetsModule';
+
+// Shims (for backward compatibility)
+export { createFarcadeShim } from './shims/farcade-shim';
+
+// Default export - SDK instance
+import { getSDK } from './core/GameFactorySDK';
+export default getSDK();
+
+
+========================================
+FILE: src/sdk/SimplifiedCore.ts
+========================================
+
+/**
+ * Game Factory SDK - Simplified Core
+ * Minimal API for game development with Remix support
+ */
+
+type RemixVariables = Record<string, any>;
+
+class GameFactorySDK {
+    private static instance: GameFactorySDK;
+    private vars: RemixVariables = {};
+    private updateCallback: (newVars: RemixVariables) => void = () => { };
+    private score: number = 0;
+    private isReady: boolean = false;
+
+    private constructor() {
+        this.initMessageListener();
+    }
+
+    public static getInstance(): GameFactorySDK {
+        if (!GameFactorySDK.instance) {
+            GameFactorySDK.instance = new GameFactorySDK();
+        }
+        return GameFactorySDK.instance;
+    }
+
+    /**
+     * 1. REGISTER REMIX VARIABLES
+     * Define what can be modded in your game
+     */
+    public registerRemix(defaultVars: RemixVariables): void {
+        this.vars = defaultVars;
+        this.sendMessage("REGISTER_SCHEMA", defaultVars);
+        console.log('[SDK] Remix variables registered:', defaultVars);
+    }
+
+    /**
+     * 2. LISTEN FOR REAL-TIME UPDATES
+     * Called when platform changes a variable
+     */
+    public onRemixUpdate(callback: (newVars: RemixVariables) => void): void {
+        this.updateCallback = callback;
+    }
+
+    /**
+     * 3. GET CURRENT VARIABLE VALUE
+     */
+    public getVar(key: string): any {
+        return this.vars[key];
+    }
+
+    /**
+     * 4. GET ALL VARIABLES
+     */
+    public getAllVars(): RemixVariables {
+        return { ...this.vars };
+    }
+
+    /**
+     * 5. SUBMIT SCORE (Farcade Replacement)
+     */
+    public submitScore(score: number): void {
+        this.score = score;
+        this.sendMessage("SUBMIT_SCORE", { score });
+        console.log('[SDK] Score submitted:', score);
+    }
+
+    /**
+     * 5b. ADD TO SCORE (Convenience)
+     */
+    public addScore(value: number): number {
+        this.score += value;
+        console.log('[SDK] Score added:', value, '-> Total:', this.score);
+        return this.score;
+    }
+
+    /**
+     * 5c. SET SCORE (Convenience)
+     */
+    public setScore(value: number): void {
+        this.score = value;
+        console.log('[SDK] Score set:', value);
+    }
+
+    /**
+     * 5d. GET CURRENT SCORE
+     */
+    public getScore(): number {
+        return this.score;
+    }
+
+
+    /**
+     * 6. GAME LIFECYCLE - Ready
+     */
+    public gameReady(): void {
+        this.isReady = true;
+        this.sendMessage("GAME_READY", true);
+        console.log('[SDK] Game ready');
+    }
+
+    /**
+     * 7. GAME LIFECYCLE - Start
+     */
+    public gameStart(): void {
+        this.sendMessage("GAME_START", true);
+        console.log('[SDK] Game started');
+    }
+
+    /**
+     * 8. GAME LIFECYCLE - End
+     */
+    public gameEnd(finalScore?: number): void {
+        const scoreToSubmit = finalScore ?? this.score;
+        this.sendMessage("GAME_END", { score: scoreToSubmit });
+        console.log('[SDK] Game ended with score:', scoreToSubmit);
+    }
+
+    /**
+     * INTERNAL: Send message to parent window
+     */
+    private sendMessage(type: string, payload: any): void {
+        try {
+            window.parent.postMessage({ type, payload }, "*");
+        } catch (error) {
+            console.error('[SDK] Failed to send message:', error);
+        }
+    }
+
+    /**
+     * INTERNAL: Listen for messages from parent
+     */
+    private initMessageListener(): void {
+        window.addEventListener("message", (event) => {
+            const { type, payload } = event.data || {};
+
+            switch (type) {
+                case "UPDATE_REMIX":
+                    // Platform changed a variable
+                    this.vars = { ...this.vars, ...payload };
+                    this.updateCallback(this.vars);
+                    console.log('[SDK] Remix updated:', payload);
+                    break;
+
+                case "REQUEST_STATE":
+                    // Platform wants current state
+                    this.sendMessage("STATE_RESPONSE", {
+                        vars: this.vars,
+                        score: this.score,
+                        isReady: this.isReady
+                    });
+                    break;
+
+                case "RESET_GAME":
+                    // Platform wants to reset
+                    this.score = 0;
+                    console.log('[SDK] Game reset');
+                    break;
+
+                default:
+                    // Unknown message type
+                    break;
+            }
+        });
+
+        console.log('[SDK] Message listener initialized');
+    }
+}
+
+// Export singleton instance
+export const sdk = GameFactorySDK.getInstance();
+
+// Also export class for type checking
+export { GameFactorySDK };
+export type { RemixVariables };
+
+
+========================================
+FILE: src/sdk/core/GameFactorySDK.ts
+========================================
+
+import { SDKConfig } from './types';
+import { ScoreModule } from '../modules/ScoreModule';
+import { LifecycleModule } from '../modules/LifecycleModule';
+import { SchemaModule } from '../modules/SchemaModule';
+import { AssetsModule } from '../modules/AssetsModule';
+
+/**
+ * Game Factory SDK - Singleton Core Class
+ * Provides modular game development utilities with Remix.gg support
+ */
+export class GameFactorySDK {
+    private static instance: GameFactorySDK | null = null;
+    private initialized: boolean = false;
+    private config: SDKConfig;
+
+    // Core Modules
+    public readonly score: ScoreModule;
+    public readonly lifecycle: LifecycleModule;
+
+    // Remix Modules
+    public readonly schema: SchemaModule;
+    public readonly assets: AssetsModule;
+
+    private constructor(config: SDKConfig = {}) {
+        this.config = {
+            debug: false,
+            timeout: 5000,
+            ...config,
+        };
+
+        // Initialize all modules
+        this.score = new ScoreModule(this.config.debug);
+        this.lifecycle = new LifecycleModule(this.config.debug);
+        this.schema = new SchemaModule(this.config.debug);
+        this.assets = new AssetsModule(this.config.debug);
+
+        this.log('SDK instance created with Remix support');
+    }
+
+    /**
+     * Get SDK instance (Singleton)
+     */
+    static getInstance(config?: SDKConfig): GameFactorySDK {
+        if (!GameFactorySDK.instance) {
+            GameFactorySDK.instance = new GameFactorySDK(config);
+        }
+        return GameFactorySDK.instance;
+    }
+
+    /**
+     * Initialize SDK
+     */
+    async init(config?: Partial<SDKConfig>): Promise<void> {
+        if (this.initialized) {
+            this.log('SDK already initialized');
+            return;
+        }
+
+        // Merge config
+        if (config) {
+            this.config = { ...this.config, ...config };
+        }
+
+        try {
+            // Setup message listener for parent communication
+            this.setupMessageListener();
+
+            // Notify parent that SDK is ready
+            this.notifyParent('SDK_READY', {
+                version: '1.0.0',
+                gameId: this.config.gameId,
+            });
+
+            this.initialized = true;
+            this.log('SDK initialized successfully');
+        } catch (error) {
+            this.log('SDK initialization failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Check if SDK is initialized
+     */
+    isInitialized(): boolean {
+        return this.initialized;
+    }
+
+    /**
+     * Get SDK configuration
+     */
+    getConfig(): SDKConfig {
+        return { ...this.config };
+    }
+
+    /**
+     * Setup message listener for parent window communication
+     */
+    private setupMessageListener(): void {
+        window.addEventListener('message', (event: MessageEvent) => {
+            // Validate message origin in production
+            if (this.config.debug) {
+                this.log('Received message:', event.data);
+            }
+
+            // Handle different message types
+            switch (event.data?.type) {
+                case 'PARENT_READY':
+                    this.log('Parent window ready');
+                    break;
+                case 'REQUEST_STATE':
+                    this.sendState();
+                    break;
+                case 'RESET_GAME':
+                    this.handleReset();
+                    break;
+                default:
+                    // Unknown message type
+                    break;
+            }
+        });
+
+        this.log('Message listener setup complete');
+    }
+
+    /**
+     * Send current state to parent
+     */
+    private sendState(): void {
+        this.notifyParent('STATE_UPDATE', {
+            lifecycle: this.lifecycle.getState(),
+            score: {
+                current: this.score.getCurrent(),
+                high: this.score.getHigh(),
+            },
+        });
+    }
+
+    /**
+     * Handle reset request from parent
+     */
+    private handleReset(): void {
+        this.lifecycle.reset();
+        this.score.reset();
+        this.log('Game reset by parent');
+    }
+
+    /**
+     * Send message to parent window
+     */
+    private notifyParent(type: string, data?: any): void {
+        try {
+            window.parent.postMessage(
+                {
+                    type,
+                    data,
+                    timestamp: Date.now(),
+                },
+                '*'
+            );
+        } catch (error) {
+            this.log('Failed to notify parent:', error);
+        }
+    }
+
+    /**
+     * Debug logging
+     */
+    private log(...args: any[]): void {
+        if (this.config.debug) {
+            console.log('[GameFactorySDK]', ...args);
+        }
+    }
+
+    /**
+     * Destroy SDK instance (for testing)
+     */
+    static destroy(): void {
+        GameFactorySDK.instance = null;
+    }
+}
+
+// Export singleton getter
+export const getSDK = (config?: SDKConfig) => GameFactorySDK.getInstance(config);
+
+
+========================================
+FILE: src/sdk/core/types.ts
+========================================
+
+// Core SDK Types
+export interface SDKConfig {
+    gameId?: string;
+    debug?: boolean;
+    timeout?: number;
+}
+
+export interface GameState {
+    status: 'idle' | 'playing' | 'paused' | 'finished';
+    score: number;
+    level: number;
+    timestamp: number;
+}
+
+export interface ScoreData {
+    value: number;
+    metadata?: Record<string, any>;
+}
+
+export interface MessagePayload {
+    type: string;
+    data?: any;
+    timestamp: number;
+}
+
+export type StateUpdateCallback = (state: GameState) => void;
+export type ErrorCallback = (error: Error) => void;
+
+
+========================================
+FILE: src/sdk/modules/ScoreModule.ts
+========================================
+
+import { ScoreData, MessagePayload } from '../core/types';
+
+/**
+ * Score Module - Handles score submission and tracking
+ */
+export class ScoreModule {
+    private currentScore: number = 0;
+    private highScore: number = 0;
+    private isSubmitting: boolean = false;
+
+    constructor(private debug: boolean = false) {
+        this.loadHighScore();
+    }
+
+    /**
+     * Send score to parent window
+     */
+    async send(scoreData: ScoreData): Promise<boolean> {
+        if (this.isSubmitting) {
+            this.log('Score submission already in progress');
+            return false;
+        }
+
+        this.isSubmitting = true;
+        this.currentScore = scoreData.value;
+
+        try {
+            // Update high score
+            if (scoreData.value > this.highScore) {
+                this.highScore = scoreData.value;
+                this.saveHighScore();
+            }
+
+            // Send to parent window via postMessage
+            const message: MessagePayload = {
+                type: 'SCORE_SUBMIT',
+                data: {
+                    score: scoreData.value,
+                    highScore: this.highScore,
+                    metadata: scoreData.metadata,
+                },
+                timestamp: Date.now(),
+            };
+
+            window.parent.postMessage(message, '*');
+            this.log('Score submitted:', scoreData.value);
+
+            // Wait for acknowledgment with timeout
+            const ack = await this.waitForAcknowledgment(3000);
+            return ack;
+        } catch (error) {
+            this.log('Score submission failed:', error);
+            return false;
+        } finally {
+            this.isSubmitting = false;
+        }
+    }
+
+    /**
+     * Get current score
+     */
+    getCurrent(): number {
+        return this.currentScore;
+    }
+
+    /**
+     * Get high score
+     */
+    getHigh(): number {
+        return this.highScore;
+    }
+
+    /**
+     * Reset current score
+     */
+    reset(): void {
+        this.currentScore = 0;
+        this.log('Score reset');
+    }
+
+    /**
+     * Add to current score
+     */
+    add(value: number): number {
+        this.currentScore += value;
+        this.log('Score added:', value, '-> Total:', this.currentScore);
+
+        // Auto-update high score
+        if (this.currentScore > this.highScore) {
+            this.highScore = this.currentScore;
+            this.saveHighScore();
+        }
+
+        return this.currentScore;
+    }
+
+    /**
+     * Set score directly
+     */
+    set(value: number): void {
+        this.currentScore = value;
+        this.log('Score set:', value);
+
+        if (value > this.highScore) {
+            this.highScore = value;
+            this.saveHighScore();
+        }
+    }
+
+
+    /**
+     * Wait for parent window acknowledgment
+     */
+    private waitForAcknowledgment(timeout: number): Promise<boolean> {
+        return new Promise((resolve) => {
+            const timeoutId = setTimeout(() => {
+                window.removeEventListener('message', handler);
+                this.log('Score acknowledgment timeout');
+                resolve(false); // Fallback: assume success even without ack
+            }, timeout);
+
+            const handler = (event: MessageEvent) => {
+                if (event.data?.type === 'SCORE_ACK') {
+                    clearTimeout(timeoutId);
+                    window.removeEventListener('message', handler);
+                    this.log('Score acknowledged by parent');
+                    resolve(true);
+                }
+            };
+
+            window.addEventListener('message', handler);
+        });
+    }
+
+    /**
+     * Load high score from localStorage
+     */
+    private loadHighScore(): void {
+        try {
+            const stored = localStorage.getItem('gf_high_score');
+            if (stored) {
+                this.highScore = parseInt(stored, 10);
+                this.log('High score loaded:', this.highScore);
+            }
+        } catch (error) {
+            this.log('Failed to load high score:', error);
+        }
+    }
+
+    /**
+     * Save high score to localStorage
+     */
+    private saveHighScore(): void {
+        try {
+            localStorage.setItem('gf_high_score', this.highScore.toString());
+            this.log('High score saved:', this.highScore);
+        } catch (error) {
+            this.log('Failed to save high score:', error);
+        }
+    }
+
+    /**
+     * Debug logging
+     */
+    private log(...args: any[]): void {
+        if (this.debug) {
+            console.log('[ScoreModule]', ...args);
+        }
+    }
+}
+
+
+========================================
+FILE: src/sdk/modules/LifecycleModule.ts
+========================================
+
+import { GameState, MessagePayload } from '../core/types';
+
+/**
+ * Lifecycle Module - Manages game lifecycle events
+ */
+export class LifecycleModule {
+    private state: GameState = {
+        status: 'idle',
+        score: 0,
+        level: 1,
+        timestamp: Date.now(),
+    };
+
+    private startTime: number = 0;
+    private endTime: number = 0;
+    private callbacks: Set<(state: GameState) => void> = new Set();
+
+    constructor(private debug: boolean = false) { }
+
+    /**
+     * Start the game
+     */
+    async start(): Promise<void> {
+        if (this.state.status === 'playing') {
+            this.log('Game already started');
+            return;
+        }
+
+        this.startTime = Date.now();
+        this.state = {
+            ...this.state,
+            status: 'playing',
+            timestamp: this.startTime,
+        };
+
+        this.notifyStateChange();
+        this.sendToParent('GAME_START');
+        this.log('Game started');
+    }
+
+    /**
+     * Pause the game
+     */
+    pause(): void {
+        if (this.state.status !== 'playing') {
+            this.log('Cannot pause: game not playing');
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            status: 'paused',
+            timestamp: Date.now(),
+        };
+
+        this.notifyStateChange();
+        this.sendToParent('GAME_PAUSE');
+        this.log('Game paused');
+    }
+
+    /**
+     * Resume the game
+     */
+    resume(): void {
+        if (this.state.status !== 'paused') {
+            this.log('Cannot resume: game not paused');
+            return;
+        }
+
+        this.state = {
+            ...this.state,
+            status: 'playing',
+            timestamp: Date.now(),
+        };
+
+        this.notifyStateChange();
+        this.sendToParent('GAME_RESUME');
+        this.log('Game resumed');
+    }
+
+    /**
+     * Finish the game
+     */
+    async finish(finalScore?: number): Promise<void> {
+        if (this.state.status === 'finished') {
+            this.log('Game already finished');
+            return;
+        }
+
+        this.endTime = Date.now();
+        const duration = this.endTime - this.startTime;
+
+        this.state = {
+            ...this.state,
+            status: 'finished',
+            score: finalScore ?? this.state.score,
+            timestamp: this.endTime,
+        };
+
+        this.notifyStateChange();
+        this.sendToParent('GAME_END', {
+            finalScore: this.state.score,
+            duration,
+            level: this.state.level,
+        });
+
+        this.log('Game finished. Duration:', duration, 'ms');
+    }
+
+    /**
+     * Reset the game
+     */
+    reset(): void {
+        this.state = {
+            status: 'idle',
+            score: 0,
+            level: 1,
+            timestamp: Date.now(),
+        };
+
+        this.startTime = 0;
+        this.endTime = 0;
+
+        this.notifyStateChange();
+        this.log('Game reset');
+    }
+
+    /**
+     * Update game state
+     */
+    updateState(updates: Partial<GameState>): void {
+        this.state = {
+            ...this.state,
+            ...updates,
+            timestamp: Date.now(),
+        };
+
+        this.notifyStateChange();
+    }
+
+    /**
+     * Get current state
+     */
+    getState(): GameState {
+        return { ...this.state };
+    }
+
+    /**
+     * Subscribe to state changes
+     */
+    onUpdate(callback: (state: GameState) => void): () => void {
+        this.callbacks.add(callback);
+        this.log('State update listener added');
+
+        // Return unsubscribe function
+        return () => {
+            this.callbacks.delete(callback);
+            this.log('State update listener removed');
+        };
+    }
+
+    /**
+     * Get game duration
+     */
+    getDuration(): number {
+        if (this.startTime === 0) return 0;
+        const end = this.endTime || Date.now();
+        return end - this.startTime;
+    }
+
+    /**
+     * Notify all subscribers of state change
+     */
+    private notifyStateChange(): void {
+        this.callbacks.forEach((callback) => {
+            try {
+                callback(this.getState());
+            } catch (error) {
+                this.log('Error in state update callback:', error);
+            }
+        });
+    }
+
+    /**
+     * Send lifecycle event to parent window
+     */
+    private sendToParent(type: string, data?: any): void {
+        try {
+            const message: MessagePayload = {
+                type,
+                data: {
+                    state: this.state,
+                    ...data,
+                },
+                timestamp: Date.now(),
+            };
+
+            window.parent.postMessage(message, '*');
+        } catch (error) {
+            this.log('Failed to send message to parent:', error);
+        }
+    }
+
+    /**
+     * Debug logging
+     */
+    private log(...args: any[]): void {
+        if (this.debug) {
+            console.log('[LifecycleModule]', ...args);
+        }
+    }
+}
+
+
+========================================
+FILE: src/sdk/modules/SchemaModule.ts
+========================================
+
+import { MessagePayload } from '../core/types';
+
+/**
+ * Schema Types for Remix functionality
+ */
+export interface SchemaProperty {
+    key: string;
+    type: 'number' | 'string' | 'boolean' | 'color' | 'range';
+    label: string;
+    defaultValue: any;
+    min?: number;
+    max?: number;
+    step?: number;
+    description?: string;
+}
+
+export interface GameSchema {
+    version: string;
+    properties: SchemaProperty[];
+}
+
+export type VariableUpdateCallback = (key: string, value: any) => void;
+
+/**
+ * Schema Module - Defines moddable game parameters
+ */
+export class SchemaModule {
+    private schema: GameSchema = {
+        version: '1.0.0',
+        properties: [],
+    };
+
+    private updateCallbacks: Set<VariableUpdateCallback> = new Set();
+    private currentValues: Map<string, any> = new Map();
+
+    constructor(private debug: boolean = false) {
+        this.setupMessageListener();
+    }
+
+    /**
+     * Define game schema - what can be modded
+     */
+    defineSchema(properties: SchemaProperty[]): void {
+        this.schema.properties = properties;
+
+        // Initialize current values with defaults
+        properties.forEach(prop => {
+            this.currentValues.set(prop.key, prop.defaultValue);
+        });
+
+        // Send schema to parent window
+        this.sendSchemaToParent();
+        this.log('Schema defined with', properties.length, 'properties');
+    }
+
+    /**
+     * Get current schema
+     */
+    getSchema(): GameSchema {
+        return { ...this.schema };
+    }
+
+    /**
+     * Get current value of a variable
+     */
+    getValue(key: string): any {
+        return this.currentValues.get(key);
+    }
+
+    /**
+     * Get all current values
+     */
+    getAllValues(): Record<string, any> {
+        const values: Record<string, any> = {};
+        this.currentValues.forEach((value, key) => {
+            values[key] = value;
+        });
+        return values;
+    }
+
+    /**
+     * Subscribe to variable updates
+     */
+    onUpdate(callback: VariableUpdateCallback): () => void {
+        this.updateCallbacks.add(callback);
+        this.log('Variable update listener added');
+
+        // Return unsubscribe function
+        return () => {
+            this.updateCallbacks.delete(callback);
+            this.log('Variable update listener removed');
+        };
+    }
+
+    /**
+     * Update a variable value (internal or from parent)
+     */
+    updateValue(key: string, value: any): void {
+        const oldValue = this.currentValues.get(key);
+
+        if (oldValue === value) {
+            return; // No change
+        }
+
+        this.currentValues.set(key, value);
+        this.log(`Variable updated: ${key} = ${value} (was ${oldValue})`);
+
+        // Notify all subscribers
+        this.notifyUpdate(key, value);
+    }
+
+    /**
+     * Setup message listener for parent window updates
+     */
+    private setupMessageListener(): void {
+        window.addEventListener('message', (event: MessageEvent) => {
+            if (event.data?.type === 'UPDATE_VARIABLE') {
+                const { key, value } = event.data.data || {};
+
+                if (key && value !== undefined) {
+                    this.updateValue(key, value);
+                }
+            } else if (event.data?.type === 'REQUEST_SCHEMA') {
+                this.sendSchemaToParent();
+            } else if (event.data?.type === 'BULK_UPDATE') {
+                // Update multiple variables at once
+                const updates = event.data.data || {};
+                Object.entries(updates).forEach(([key, value]) => {
+                    this.updateValue(key, value);
+                });
+            }
+        });
+
+        this.log('Schema message listener setup complete');
+    }
+
+    /**
+     * Send schema to parent window
+     */
+    private sendSchemaToParent(): void {
+        try {
+            const message: MessagePayload = {
+                type: 'SCHEMA_DEFINED',
+                data: {
+                    schema: this.schema,
+                    currentValues: this.getAllValues(),
+                },
+                timestamp: Date.now(),
+            };
+
+            window.parent.postMessage(message, '*');
+            this.log('Schema sent to parent');
+        } catch (error) {
+            this.log('Failed to send schema to parent:', error);
+        }
+    }
+
+    /**
+     * Notify all subscribers of variable update
+     */
+    private notifyUpdate(key: string, value: any): void {
+        this.updateCallbacks.forEach((callback) => {
+            try {
+                callback(key, value);
+            } catch (error) {
+                this.log('Error in variable update callback:', error);
+            }
+        });
+    }
+
+    /**
+     * Validate a value against schema
+     */
+    validateValue(key: string, value: any): boolean {
+        const property = this.schema.properties.find(p => p.key === key);
+
+        if (!property) {
+            this.log(`Warning: No schema property found for key: ${key}`);
+            return false;
+        }
+
+        // Type validation
+        const valueType = typeof value;
+        if (property.type === 'number' && valueType !== 'number') return false;
+        if (property.type === 'string' && valueType !== 'string') return false;
+        if (property.type === 'boolean' && valueType !== 'boolean') return false;
+
+        // Range validation
+        if (property.type === 'number' || property.type === 'range') {
+            if (property.min !== undefined && value < property.min) return false;
+            if (property.max !== undefined && value > property.max) return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Debug logging
+     */
+    private log(...args: any[]): void {
+        if (this.debug) {
+            console.log('[SchemaModule]', ...args);
+        }
+    }
+}
+
+
+========================================
+FILE: src/sdk/modules/AssetsModule.ts
+========================================
+
+import { MessagePayload } from '../core/types';
+
+/**
+ * Asset Types for Remix functionality
+ */
+export interface AssetMapping {
+    originalUrl: string;
+    remixUrl: string;
+    type: 'image' | 'audio' | 'video' | 'sprite';
+}
+
+export interface AssetManifest {
+    assets: AssetMapping[];
+    timestamp: number;
+}
+
+export type AssetLoadCallback = (url: string, success: boolean) => void;
+
+/**
+ * Assets Module - Manages dynamic asset replacement for remixing
+ */
+export class AssetsModule {
+    private assetMap: Map<string, string> = new Map();
+    private loadedAssets: Set<string> = new Set();
+    private loadCallbacks: Set<AssetLoadCallback> = new Set();
+    private preloadedImages: Map<string, HTMLImageElement> = new Map();
+
+    constructor(private debug: boolean = false) {
+        this.setupMessageListener();
+    }
+
+    /**
+     * Map assets - replace original URLs with remix URLs
+     */
+    mapAssets(mappings: AssetMapping[]): void {
+        mappings.forEach(mapping => {
+            this.assetMap.set(mapping.originalUrl, mapping.remixUrl);
+            this.log(`Mapped: ${mapping.originalUrl} -> ${mapping.remixUrl}`);
+        });
+
+        // Preload new assets
+        this.preloadAssets(mappings);
+
+        // Notify parent
+        this.sendManifestToParent();
+    }
+
+    /**
+     * Get remixed URL for an asset
+     */
+    getAssetUrl(originalUrl: string): string {
+        const remixUrl = this.assetMap.get(originalUrl);
+        return remixUrl || originalUrl;
+    }
+
+    /**
+     * Load an image asset with automatic remix mapping
+     */
+    async loadImage(originalUrl: string): Promise<HTMLImageElement> {
+        const url = this.getAssetUrl(originalUrl);
+
+        // Check if already preloaded
+        if (this.preloadedImages.has(url)) {
+            this.log(`Using preloaded image: ${url}`);
+            return this.preloadedImages.get(url)!;
+        }
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+
+            img.onload = () => {
+                this.loadedAssets.add(url);
+                this.preloadedImages.set(url, img);
+                this.notifyLoad(url, true);
+                this.log(`Image loaded: ${url}`);
+                resolve(img);
+            };
+
+            img.onerror = () => {
+                this.notifyLoad(url, false);
+                this.log(`Image load failed: ${url}`);
+                reject(new Error(`Failed to load image: ${url}`));
+            };
+
+            img.src = url;
+        });
+    }
+
+    /**
+     * Load multiple images in parallel
+     */
+    async loadImages(urls: string[]): Promise<HTMLImageElement[]> {
+        return Promise.all(urls.map(url => this.loadImage(url)));
+    }
+
+    /**
+     * Check if an asset is loaded
+     */
+    isLoaded(url: string): boolean {
+        const remixUrl = this.getAssetUrl(url);
+        return this.loadedAssets.has(remixUrl);
+    }
+
+    /**
+     * Get all asset mappings
+     */
+    getMappings(): AssetMapping[] {
+        const mappings: AssetMapping[] = [];
+        this.assetMap.forEach((remixUrl, originalUrl) => {
+            mappings.push({
+                originalUrl,
+                remixUrl,
+                type: this.detectAssetType(remixUrl),
+            });
+        });
+        return mappings;
+    }
+
+    /**
+     * Clear all asset mappings
+     */
+    clearMappings(): void {
+        this.assetMap.clear();
+        this.loadedAssets.clear();
+        this.preloadedImages.clear();
+        this.log('All asset mappings cleared');
+    }
+
+    /**
+     * Subscribe to asset load events
+     */
+    onAssetLoad(callback: AssetLoadCallback): () => void {
+        this.loadCallbacks.add(callback);
+        this.log('Asset load listener added');
+
+        return () => {
+            this.loadCallbacks.delete(callback);
+            this.log('Asset load listener removed');
+        };
+    }
+
+    /**
+     * Preload assets in background
+     */
+    private async preloadAssets(mappings: AssetMapping[]): Promise<void> {
+        const imageUrls = mappings
+            .filter(m => m.type === 'image' || m.type === 'sprite')
+            .map(m => m.remixUrl);
+
+        if (imageUrls.length === 0) return;
+
+        this.log(`Preloading ${imageUrls.length} images...`);
+
+        try {
+            await this.loadImages(imageUrls);
+            this.log('All images preloaded successfully');
+        } catch (error) {
+            this.log('Some images failed to preload:', error);
+        }
+    }
+
+    /**
+     * Detect asset type from URL
+     */
+    private detectAssetType(url: string): 'image' | 'audio' | 'video' | 'sprite' {
+        const ext = url.split('.').pop()?.toLowerCase() || '';
+
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+            return 'image';
+        } else if (['mp3', 'wav', 'ogg', 'aac'].includes(ext)) {
+            return 'audio';
+        } else if (['mp4', 'webm', 'ogv'].includes(ext)) {
+            return 'video';
+        }
+
+        return 'sprite';
+    }
+
+    /**
+     * Setup message listener for parent window asset updates
+     */
+    private setupMessageListener(): void {
+        window.addEventListener('message', (event: MessageEvent) => {
+            if (event.data?.type === 'UPDATE_ASSETS') {
+                const mappings = event.data.data?.mappings || [];
+                this.mapAssets(mappings);
+            } else if (event.data?.type === 'REQUEST_ASSETS') {
+                this.sendManifestToParent();
+            } else if (event.data?.type === 'CLEAR_ASSETS') {
+                this.clearMappings();
+            }
+        });
+
+        this.log('Assets message listener setup complete');
+    }
+
+    /**
+     * Send asset manifest to parent window
+     */
+    private sendManifestToParent(): void {
+        try {
+            const manifest: AssetManifest = {
+                assets: this.getMappings(),
+                timestamp: Date.now(),
+            };
+
+            const message: MessagePayload = {
+                type: 'ASSETS_MANIFEST',
+                data: manifest,
+                timestamp: Date.now(),
+            };
+
+            window.parent.postMessage(message, '*');
+            this.log('Asset manifest sent to parent');
+        } catch (error) {
+            this.log('Failed to send asset manifest:', error);
+        }
+    }
+
+    /**
+     * Notify subscribers of asset load
+     */
+    private notifyLoad(url: string, success: boolean): void {
+        this.loadCallbacks.forEach((callback) => {
+            try {
+                callback(url, success);
+            } catch (error) {
+                this.log('Error in asset load callback:', error);
+            }
+        });
+    }
+
+    /**
+     * Helper: Create p5.js compatible image loader
+     */
+    createP5Loader() {
+        const self = this;
+        return function (originalUrl: string, callback?: (img: any) => void) {
+            const url = self.getAssetUrl(originalUrl);
+
+            // Use p5's loadImage if available
+            if (typeof (window as any).loadImage === 'function') {
+                return (window as any).loadImage(url, callback);
+            }
+
+            // Fallback to manual loading
+            self.loadImage(url).then(img => {
+                if (callback) callback(img);
+            });
+        };
+    }
+
+    /**
+     * Debug logging
+     */
+    private log(...args: any[]): void {
+        if (this.debug) {
+            console.log('[AssetsModule]', ...args);
+        }
+    }
+}
+
+
+========================================
+FILE: src/sdk/shims/farcade-shim.ts
+========================================
+
+/**
+ * Farcade SDK Compatibility Shim
+ * Provides backward compatibility for games using old Farcade SDK
+ */
+
+import { getSDK } from '../core/GameFactorySDK';
+
+// Create global Farcade-like interface
+interface FarcadeShim {
+    init: () => Promise<void>;
+    gameStart: () => Promise<void>;
+    gameEnd: (score?: number) => Promise<void>;
+    submitScore: (score: number, metadata?: any) => Promise<boolean>;
+    onGameStateUpdated: (callback: (state: any) => void) => () => void;
+    getAssets: () => Promise<any[]>;
+}
+
+/**
+ * Create Farcade compatibility layer
+ */
+function createFarcadeShim(): FarcadeShim {
+    const sdk = getSDK({ debug: true });
+
+    return {
+        // Initialize SDK
+        async init(): Promise<void> {
+            console.warn('[Farcade Shim] Using compatibility layer. Consider migrating to GameFactorySDK.');
+            await sdk.init();
+        },
+
+        // Start game
+        async gameStart(): Promise<void> {
+            await sdk.lifecycle.start();
+        },
+
+        // End game
+        async gameEnd(score?: number): Promise<void> {
+            await sdk.lifecycle.finish(score);
+        },
+
+        // Submit score
+        async submitScore(score: number, metadata?: any): Promise<boolean> {
+            return await sdk.score.send({ value: score, metadata });
+        },
+
+        // Subscribe to state updates
+        onGameStateUpdated(callback: (state: any) => void): () => void {
+            return sdk.lifecycle.onUpdate(callback);
+        },
+
+        // Get assets (placeholder - implement based on your needs)
+        async getAssets(): Promise<any[]> {
+            console.warn('[Farcade Shim] getAssets() is not implemented in shim');
+            return [];
+        },
+    };
+}
+
+// Expose to window for legacy code
+declare global {
+    interface Window {
+        farcade?: FarcadeShim;
+        FarcadeSDK?: FarcadeShim;
+    }
+}
+
+// Auto-initialize shim if Farcade is referenced
+if (typeof window !== 'undefined') {
+    window.farcade = createFarcadeShim();
+    window.FarcadeSDK = window.farcade; // Alias for compatibility
+
+    console.log('[Farcade Shim] Compatibility layer loaded. Old Farcade code will work.');
+}
+
+export { createFarcadeShim };
+
