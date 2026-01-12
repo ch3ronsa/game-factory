@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AI_CONFIG } from '@/config/ai';
 
+// Base prompt for new game creation
+
 const SYSTEM_PROMPT = `Sen hem bir Oyun Tasarımı Uzmanı hem de deneyimli bir p5.js Geliştiricisisin. Kullanıcının girdiği oyun fikrini analiz et ve aşağıdaki şemaya uygun bir JSON objesi döndür.
 
 JSON Formatı:
@@ -56,6 +58,33 @@ KRİTİK KURALLAR:
 4. type: "color" için sadece defaultValue
 5. type: "boolean" için sadece defaultValue
 6. SADECE geçerli JSON döndür, başka açıklama ekleme.`;
+
+// Revision prompt for updating existing games
+const REVISION_PROMPT = (previousGameData: any, newInstructions: string) => `Sen bir oyun geliştirme uzmanısın. Kullanıcı mevcut bir oyunu revize etmek istiyor.
+
+MEVCUT OYUN:
+${JSON.stringify(previousGameData, null, 2)}
+
+Kullanıcının yeni talimatı: "${newInstructions}"
+
+GÖREV: Sıfırdan oyun YAPMA. Mevcut gameCode ve modSchema'yı temel al ve kullanıcının talebini entegre et.
+
+KRİTİK KURALLAR:
+1. gameCode'u güncelle (yeni özellikler ekle/değiştir, mevcut özellikleri koru)
+2. modSchema'yı güncelle (yeni parametreler varsa ekle, mevcut parametreleri koru)
+3. Tüm global değişkenleri koru ve yenilerini ekle
+4. SDK.registerMods() çağrısını yeni parametrelerle güncelle
+5. gameName, genre, mechanics gibi metadata'yı güncelle (gerekirse)
+6. SADECE geçerli JSON döndür, başka açıklama ekleme
+
+JSON Formatı: (önceki ile aynı yapı, güncellenmiş içerikle)
+{
+  "gameName": "Güncellenmiş oyun adı",
+  "genre": "...",
+  "mechanics": [...],
+  "modSchema": [...mevcut + yeni parametreler...],
+  "gameCode": "...güncellenmiş kod..."
+}`;
 
 // --- DYNAMIC MOCK GENERATOR (SDK UYUMLU VERSİYON) ---
 function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong', description: string) {
@@ -303,9 +332,11 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
 
 export async function POST(request: NextRequest) {
     let description = "";
+    let previousGameData = null;
     try {
         const json = await request.json();
         description = json.description || "";
+        previousGameData = json.previousGameData || null; // NEW: Support for iterative revisions
 
         const apiKey = AI_CONFIG.apiKey;
         if (!apiKey) throw new Error('API Key configuration missing');
@@ -321,8 +352,18 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
                 "model": "google/gemini-2.0-flash-001",
                 "messages": [
-                    { "role": "system", "content": SYSTEM_PROMPT },
-                    { "role": "user", "content": `Kullanıcının oyun fikri: ${description}` }
+                    {
+                        "role": "system",
+                        "content": previousGameData
+                            ? REVISION_PROMPT(previousGameData, description)
+                            : SYSTEM_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": previousGameData
+                            ? `Oyunu şu şekilde güncelle: ${description}`
+                            : `Kullanıcının oyun fikri: ${description}`
+                    }
                 ]
             })
         });

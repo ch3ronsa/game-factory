@@ -99,7 +99,10 @@ export function GameDescriptionForm() {
             const response = await fetch('/api/generate-game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description }),
+                body: JSON.stringify({
+                    description,
+                    previousGameData: gameData || null // Send existing game for revision
+                }),
             });
 
             const data = await response.json();
@@ -113,8 +116,12 @@ export function GameDescriptionForm() {
                     style: { background: '#333', color: '#fbbf24' }
                 });
             } else {
-                toast.success('System Online: AI Game Generated.');
+                const isRevision = gameData !== null;
+                toast.success(isRevision ? 'Game Updated Successfully!' : 'System Online: AI Game Generated.');
             }
+
+            // Clear description for next iteration
+            setDescription('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'System Failure');
             toast.error('AI Processing Failed');
@@ -206,7 +213,7 @@ export function GameDescriptionForm() {
                                 </>
                             ) : (
                                 <>
-                                    <span>INITIALIZE ENGINE</span>
+                                    <span>{gameData ? 'REVISE & UPDATE ENGINE' : 'INITIALIZE ENGINE'}</span>
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                                 </>
                             )}
@@ -288,8 +295,8 @@ export function GameDescriptionForm() {
                                             <button
                                                 onClick={() => handleModChange(item.key, !modValues[item.key])}
                                                 className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
-                                                        ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
-                                                        : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
+                                                    ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
+                                                    : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
                                                     }`}
                                             >
                                                 {modValues[item.key] ? '✓ ENABLED' : '✗ DISABLED'}
