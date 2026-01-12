@@ -6,6 +6,16 @@ import { toast } from 'react-hot-toast';
 import { GAME_FACTORY_ADDRESS, GAME_FACTORY_ABI } from '@/config/wagmi';
 import { GamePlayer } from './GamePlayer';
 
+interface ModSchemaItem {
+    key: string;
+    type: 'range' | 'color' | 'boolean';
+    label: string;
+    defaultValue: number | string | boolean;
+    min?: number;
+    max?: number;
+    step?: number;
+}
+
 interface GameData {
     gameName: string;
     genre: string;
@@ -16,6 +26,7 @@ interface GameData {
     visualStyle: string;
     startingScene: string;
     playerActions: string[];
+    modSchema?: ModSchemaItem[];
     gameCode: string;
 }
 
@@ -26,6 +37,7 @@ export function GameDescriptionForm() {
     const [gameData, setGameData] = useState<GameData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [modValues, setModValues] = useState<Record<string, any>>({});
 
     const {
         data: hash,
@@ -49,6 +61,31 @@ export function GameDescriptionForm() {
             toast.success('Game deployed to Mantle Network!', { icon: '🚀' });
         }
     }, [isConfirmed]);
+
+    // Initialize mod values from schema
+    useEffect(() => {
+        if (gameData?.modSchema) {
+            const initialValues: Record<string, any> = {};
+            gameData.modSchema.forEach(item => {
+                initialValues[item.key] = item.defaultValue;
+            });
+            setModValues(initialValues);
+        }
+    }, [gameData]);
+
+    // Handle mod value changes and send to GamePlayer
+    const handleModChange = (key: string, value: any) => {
+        setModValues(prev => ({ ...prev, [key]: value }));
+
+        // Send UPDATE_MODS to GamePlayer iframe
+        const iframe = document.querySelector('iframe');
+        if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage({
+                type: 'UPDATE_MODS',
+                payload: { [key]: value }
+            }, '*');
+        }
+    };
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -198,7 +235,74 @@ export function GameDescriptionForm() {
                     ))}
                 </div>
 
-                {/* CARD 3: SPECS (Conditional) */}
+                {/* CARD 3: MOD CONTROLS - Dynamic from modSchema */}
+                {gameData?.modSchema && gameData.modSchema.length > 0 && (
+                    <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom-4 duration-500">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 opacity-50"></div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                                        <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                    </div>
+                                    <span>Game Parameters</span>
+                                </h3>
+                                <span className="px-2 py-1 text-[9px] font-mono tracking-widest uppercase text-green-300 bg-green-500/10 rounded-full border border-green-500/20">Live</span>
+                            </div>
+
+                            <div className="space-y-4">
+                                {gameData.modSchema.map((item) => (
+                                    <div key={item.key} className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-gray-400 font-medium">{item.label}</span>
+                                            <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded">
+                                                {typeof modValues[item.key] === 'number'
+                                                    ? modValues[item.key].toFixed(1)
+                                                    : String(modValues[item.key])}
+                                            </span>
+                                        </div>
+
+                                        {item.type === 'range' && (
+                                            <input
+                                                type="range"
+                                                min={item.min}
+                                                max={item.max}
+                                                step={item.step}
+                                                value={modValues[item.key] || item.defaultValue}
+                                                onChange={(e) => handleModChange(item.key, parseFloat(e.target.value))}
+                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500 hover:accent-green-400 transition-colors"
+                                            />
+                                        )}
+
+                                        {item.type === 'color' && (
+                                            <input
+                                                type="color"
+                                                value={modValues[item.key] || item.defaultValue}
+                                                onChange={(e) => handleModChange(item.key, e.target.value)}
+                                                className="w-full h-10 rounded-lg cursor-pointer border border-white/10"
+                                            />
+                                        )}
+
+                                        {item.type === 'boolean' && (
+                                            <button
+                                                onClick={() => handleModChange(item.key, !modValues[item.key])}
+                                                className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
+                                                        ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
+                                                        : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
+                                                    }`}
+                                            >
+                                                {modValues[item.key] ? '✓ ENABLED' : '✗ DISABLED'}
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* CARD 4: SPECS (Conditional) */}
                 {gameData && (
                     <div className="bg-neutral-900/60 border border-white/5 rounded-3xl p-6 backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-500">
                         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Technical Specs</h3>
