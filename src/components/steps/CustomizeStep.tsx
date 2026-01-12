@@ -45,22 +45,34 @@ export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving }
         if (gameData?.modSchema) {
             const initial: Record<string, any> = {};
             gameData.modSchema.forEach(item => {
-                initial[item.key] = modValues[item.key] ?? item.defaultValue;
+                initial[item.key] = item.defaultValue; // Use default value from schema
             });
             setModValues(initial);
+            console.log('✅ Mod Values Initialized:', initial);
         }
-    }, [gameData]);
+    }, [gameData?.gameCode]); // Only re-initialize when game changes
 
     // Send mod updates to iframe
     const handleModChange = (key: string, value: any) => {
-        setModValues(prev => ({ ...prev, [key]: value }));
+        console.log('🔧 handleModChange called:', key, '=', value);
+
+        setModValues(prev => {
+            const updated = { ...prev, [key]: value };
+            console.log('📊 Updated modValues:', updated);
+            return updated;
+        });
 
         const iframe = document.querySelector('iframe');
+        console.log('🎯 Looking for iframe...', iframe ? 'Found!' : 'Not found');
+
         if (iframe?.contentWindow) {
+            console.log('📤 Sending UPDATE_MODS to iframe:', { [key]: value });
             iframe.contentWindow.postMessage({
                 type: 'UPDATE_MODS',
                 payload: { [key]: value }
             }, '*');
+        } else {
+            console.warn('⚠️ Iframe or contentWindow not available');
         }
     };
 
