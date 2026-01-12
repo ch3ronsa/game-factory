@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'react-hot-toast';
 import { GAME_FACTORY_ADDRESS, GAME_FACTORY_ABI } from '@/config/wagmi';
@@ -36,7 +37,6 @@ export function GameDescriptionForm() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [gameData, setGameData] = useState<GameData | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
     const [modValues, setModValues] = useState<Record<string, any>>({});
 
     const {
@@ -93,7 +93,6 @@ export function GameDescriptionForm() {
 
         setIsGenerating(true);
         setError(null);
-        setGameData(null);
 
         try {
             const response = await fetch('/api/generate-game', {
@@ -101,7 +100,7 @@ export function GameDescriptionForm() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     description,
-                    previousGameData: gameData || null // Send existing game for revision
+                    previousGameData: gameData || null
                 }),
             });
 
@@ -109,19 +108,17 @@ export function GameDescriptionForm() {
             if (!response.ok) throw new Error(data.error || 'Generation failed');
 
             setGameData(data.gameData);
+            setDescription('');
 
             if (data.isMock) {
-                toast("AI Servisi Meşgul: Simülasyon Modu Aktif", {
+                toast("AI Service Busy: Simulation Mode Active", {
                     icon: '⚠️',
                     style: { background: '#333', color: '#fbbf24' }
                 });
             } else {
                 const isRevision = gameData !== null;
-                toast.success(isRevision ? 'Game Updated Successfully!' : 'System Online: AI Game Generated.');
+                toast.success(isRevision ? 'Game Evolved!' : 'Engine Initialized!');
             }
-
-            // Clear description for next iteration
-            setDescription('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'System Failure');
             toast.error('AI Processing Failed');
@@ -132,16 +129,21 @@ export function GameDescriptionForm() {
 
     const handleMint = () => {
         if (!gameData || !isConnected) {
-            if (!isConnected) toast.error('Wallet link required.');
+            toast.error('Please connect wallet first');
             return;
         }
 
-        toast.loading('Deploying to Mantle...', { id: 'mint' });
+        const mintData = {
+            ...gameData,
+            currentModValues: modValues
+        };
+
+        toast.loading('Preparing transaction...', { id: 'mint' });
         writeContract({
             address: GAME_FACTORY_ADDRESS,
             abi: GAME_FACTORY_ABI,
             functionName: 'mintGame',
-            args: [gameData.gameName, JSON.stringify(gameData)],
+            args: [gameData.gameName, JSON.stringify(mintData)],
         }, {
             onSuccess: () => {
                 toast.dismiss('mint');
@@ -151,271 +153,224 @@ export function GameDescriptionForm() {
         });
     };
 
-    const examplePrompts = [
-        "Space Shooter with Token Rewards",
-        "Cyberpunk RPG Adventure",
-        "Physics Puzzle Platformer",
-        "Survival Zombie Strategy",
-    ];
-
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full font-sans text-slate-200">
-            {/* LEFT COLUMN: DESIGN LAB (Bento Layout) */}
-            <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className="h-full w-full relative bg-[#050505]">
+            <AnimatePresence mode="wait">
+                {!gameData ? (
+                    // ========== CENTERED INITIAL STATE ==========
+                    <motion.div
+                        key="centered"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full flex items-center justify-center p-8"
+                    >
+                        <div className="w-full max-w-2xl">
+                            {/* Design Lab Card */}
+                            <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 opacity-50"></div>
 
-                {/* CARD 1: MAIN INPUT - Glassmorphism */}
-                <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl group transition-all hover:border-white/10">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 opacity-50"></div>
-
-                    <div className="p-6 md:p-8 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                                    <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-                                </div>
-                                Design Lab
-                            </h2>
-                            <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-purple-300 bg-purple-500/10 rounded-full border border-purple-500/20">v2.0.1 Beta</span>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Directive Input</label>
-                            <div className="relative group/input">
-                                <textarea
-                                    id="userInput"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder={gameData
-                                        ? "Mevcut oyunu nasıl geliştir elim? (Örn: Düşman ekle, yerçekimini azalt, power-up sistemi ekle)"
-                                        : "// Initialize game parameters...\n// E.g. Pixel Art Platformer with double-jump mechanics..."}
-                                    className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-5 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
-                                />
-                                <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
-                                    {description.length} chars
-                                </div>
-                            </div>
-                        </div>
-
-                        <button
-                            id="submit-button"
-                            onClick={(e) => handleSubmit(e)}
-                            disabled={!description.trim() || isGenerating}
-                            className={`w-full py-4 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-3 relative overflow-hidden ${isGenerating
-                                ? 'bg-neutral-800 text-gray-400 cursor-not-allowed border border-white/5'
-                                : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] hover:shadow-purple-500/20'
-                                }`}
-                        >
-                            {isGenerating && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
-                            )}
-                            {isGenerating ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
-                                    <span className="font-mono text-xs">PROCESSING...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>{gameData ? 'EVOLVE ENGINE' : 'INITIALIZE ENGINE'}</span>
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                {/* CARD 2: SUGGESTIONS GRID */}
-                <div className="grid grid-cols-2 gap-4">
-                    {examplePrompts.map((prompt, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setDescription(prompt)}
-                            className="group relative p-4 bg-neutral-900/40 border border-white/5 hover:border-white/10 rounded-2xl text-left transition-all hover:bg-white/[0.03]"
-                        >
-                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                            </div>
-                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mb-3 text-gray-400 group-hover:text-white group-hover:bg-white/10 transition-colors font-mono text-xs">
-                                0{i + 1}
-                            </div>
-                            <p className="text-xs font-medium text-gray-400 group-hover:text-gray-200 line-clamp-2 leading-relaxed">
-                                {prompt}
-                            </p>
-                        </button>
-                    ))}
-                </div>
-
-                {/* CARD 3: MOD CONTROLS - Dynamic from modSchema */}
-                {gameData?.modSchema && gameData.modSchema.length > 0 && (
-                    <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom-4 duration-500">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 opacity-50"></div>
-
-                        <div className="p-6 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                                        <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                                <div className="p-8 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                                            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                            </div>
+                                            Live Studio
+                                        </h2>
+                                        <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-purple-300 bg-purple-500/10 rounded-full border border-purple-500/20">v3.0 Beta</span>
                                     </div>
-                                    <span>Game Parameters</span>
-                                </h3>
-                                <span className="px-2 py-1 text-[9px] font-mono tracking-widest uppercase text-green-300 bg-green-500/10 rounded-full border border-green-500/20">Live</span>
-                            </div>
 
-                            <div className="space-y-4">
-                                {gameData.modSchema.map((item) => (
-                                    <div key={item.key} className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5">
-                                        <div className="flex justify-between items-center text-xs">
-                                            <span className="text-gray-400 font-medium">{item.label}</span>
-                                            <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded">
-                                                {typeof modValues[item.key] === 'number'
-                                                    ? modValues[item.key].toFixed(1)
-                                                    : String(modValues[item.key])}
-                                            </span>
+                                    <div className="space-y-3">
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Game Directive</label>
+                                        <div className="relative">
+                                            <textarea
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                placeholder="// Describe your game vision...\n// E.g. Cyberpunk platformer with time-manipulation mechanics"
+                                                className="w-full h-56 bg-black/40 border border-white/5 rounded-2xl p-6 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
+                                            />
+                                            <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
+                                                {description.length} chars
+                                            </div>
                                         </div>
-
-                                        {item.type === 'range' && (
-                                            <input
-                                                type="range"
-                                                min={item.min}
-                                                max={item.max}
-                                                step={item.step}
-                                                value={modValues[item.key] || item.defaultValue}
-                                                onChange={(e) => handleModChange(item.key, parseFloat(e.target.value))}
-                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500 hover:accent-green-400 transition-colors"
-                                            />
-                                        )}
-
-                                        {item.type === 'color' && (
-                                            <input
-                                                type="color"
-                                                value={modValues[item.key] || item.defaultValue}
-                                                onChange={(e) => handleModChange(item.key, e.target.value)}
-                                                className="w-full h-10 rounded-lg cursor-pointer border border-white/10"
-                                            />
-                                        )}
-
-                                        {item.type === 'boolean' && (
-                                            <button
-                                                onClick={() => handleModChange(item.key, !modValues[item.key])}
-                                                className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
-                                                    ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
-                                                    : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
-                                                    }`}
-                                            >
-                                                {modValues[item.key] ? '✓ ENABLED' : '✗ DISABLED'}
-                                            </button>
-                                        )}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                {/* CARD 4: SPECS (Conditional) */}
-                {gameData && (
-                    <div className="bg-neutral-900/60 border border-white/5 rounded-3xl p-6 backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Technical Specs</h3>
-                        <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                            <div>
-                                <div className="text-[10px] text-gray-500 uppercase">Class</div>
-                                <div className="text-sm font-bold text-white mt-0.5">{gameData.genre}</div>
-                            </div>
-                            <div>
-                                <div className="text-[10px] text-gray-500 uppercase">Style</div>
-                                <div className="text-sm font-bold text-white mt-0.5">{gameData.visualStyle}</div>
-                            </div>
-                            <div className="col-span-2">
-                                <div className="text-[10px] text-gray-500 uppercase mb-1">Difficulty Matrix</div>
-                                <div className="h-2 bg-black/50 rounded-full overflow-hidden flex">
-                                    {[...Array(10)].map((_, i) => (
-                                        <div key={i} className={`flex-1 border-r border-black/20 last:border-0 ${i < gameData.difficulty ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'bg-transparent'}`}></div>
-                                    ))}
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!description.trim() || isGenerating}
+                                        className={`w-full py-5 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-3 relative overflow-hidden ${isGenerating
+                                            ? 'bg-neutral-800 text-gray-400 cursor-not-allowed border border-white/5'
+                                            : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] hover:shadow-purple-500/20'
+                                            }`}
+                                    >
+                                        {isGenerating && (
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
+                                        )}
+                                        {isGenerating ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                                                <span className="font-mono text-sm">INITIALIZING...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-lg">🚀 INITIALIZE ENGINE</span>
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {error && (
+                                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                            <p className="text-red-400 font-mono text-sm">{error}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
+                ) : (
+                    // ========== STUDIO LAYOUT (30% / 70%) ==========
+                    <motion.div
+                        key="studio"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4 }}
+                        className="h-full grid grid-cols-12 gap-4 p-4"
+                    >
+                        {/* LEFT SIDEBAR: Studio Controls (30%) */}
+                        <motion.div
+                            initial={{ x: -100, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.4 }}
+                            className="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full"
+                        >
+                            {/* Chat Input */}
+                            <div className="bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-4 border border-white/5 shadow-xl">
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-bold">
+                                        <span>💬</span>
+                                        <span>Evolution Prompt</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                                            placeholder="How should we evolve the game?"
+                                            className="flex-1 bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                        />
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={!description.trim() || isGenerating}
+                                            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95"
+                                        >
+                                            {isGenerating ? '⏳' : '✨'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Mod Controls */}
+                            {gameData?.modSchema && gameData.modSchema.length > 0 && (
+                                <div className="flex-1 bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-4 border border-white/5 shadow-xl overflow-y-auto">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                            <span>⚙️</span>
+                                            <span>Live Parameters</span>
+                                        </h3>
+                                        <span className="px-2 py-1 text-[9px] font-mono tracking-widest uppercase text-green-300 bg-green-500/10 rounded-full border border-green-500/20">Active</span>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {gameData.modSchema.map((item) => (
+                                            <div key={item.key} className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-gray-400 font-medium">{item.label}</span>
+                                                    <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded text-[10px]">
+                                                        {typeof modValues[item.key] === 'number'
+                                                            ? modValues[item.key].toFixed(1)
+                                                            : String(modValues[item.key])}
+                                                    </span>
+                                                </div>
+
+                                                {item.type === 'range' && (
+                                                    <input
+                                                        type="range"
+                                                        min={item.min}
+                                                        max={item.max}
+                                                        step={item.step}
+                                                        value={modValues[item.key] || item.defaultValue}
+                                                        onChange={(e) => handleModChange(item.key, parseFloat(e.target.value))}
+                                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 hover:accent-purple-400 transition-colors"
+                                                    />
+                                                )}
+
+                                                {item.type === 'color' && (
+                                                    <input
+                                                        type="color"
+                                                        value={modValues[item.key] || item.defaultValue}
+                                                        onChange={(e) => handleModChange(item.key, e.target.value)}
+                                                        className="w-full h-10 rounded-lg cursor-pointer border border-white/10"
+                                                    />
+                                                )}
+
+                                                {item.type === 'boolean' && (
+                                                    <button
+                                                        onClick={() => handleModChange(item.key, !modValues[item.key])}
+                                                        className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
+                                                                ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
+                                                                : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
+                                                            }`}
+                                                    >
+                                                        {modValues[item.key] ? '✓ ENABLED' : '✗ DISABLED'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Deploy Button */}
+                            <button
+                                onClick={handleMint}
+                                disabled={!isConnected || isMinting || isConfirming}
+                                className="w-full py-4 bg-white hover:bg-gray-100 disabled:bg-gray-700 disabled:cursor-not-allowed text-black disabled:text-gray-400 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
+                            >
+                                {isMinting || isConfirming ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin"></div>
+                                        <span>Deploying...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>🚀</span>
+                                        <span>Deploy to Chain</span>
+                                    </>
+                                )}
+                            </button>
+                        </motion.div>
+
+                        {/* RIGHT PANEL: Live Preview (70%) */}
+                        <motion.div
+                            initial={{ x: 100, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.3, duration: 0.4 }}
+                            className="col-span-12 lg:col-span-8 h-full"
+                        >
+                            <div className="h-full bg-[#050505] rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative">
+                                <GamePlayer
+                                    key={gameData.gameCode.slice(0, 100)}
+                                    gameData={gameData}
+                                    isInline={true}
+                                />
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
-            </div>
-
-            {/* RIGHT COLUMN: LIVE ENGINE */}
-            <div className={`lg:col-span-7 relative bg-[#050505] rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-700 ${isGenerating ? 'ring-2 ring-purple-500/50' : ''}`}>
-
-                {/* Status Bar */}
-                <div className="h-14 border-b border-white/5 bg-white/[0.02] flex items-center justify-center px-6">
-                    <div className="flex items-center gap-3">
-                        <div className={`relative w-2 h-2 rounded-full ${gameData ? 'bg-emerald-500' : (isGenerating ? 'bg-yellow-500 animate-pulse' : 'bg-red-500')}`}>
-                            {gameData && <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>}
-                        </div>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">
-                            {isGenerating ? 'PROCESSING STREAM...' : (gameData ? 'SYSTEM ONLINE' : 'STANDBY MODE')}
-                        </span>
-                    </div>
-
-                    {gameData && (
-                        <div className="absolute right-6 flex gap-2">
-                            <button onClick={handleMint} disabled={isMinting} className="h-8 px-4 flex items-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded text-[10px] font-bold text-purple-300 uppercase tracking-wide transition-colors">
-                                {isMinting ? 'Deploying...' : 'Deploy to Chain'}
-                            </button>
-                            <button onClick={() => setIsPlaying(true)} className="h-8 w-8 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded text-gray-300 hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Canvas Container */}
-                <div id="responseArea" className="flex-1 relative bg-[url('/grid-dark.svg')] bg-[length:40px_40px] bg-center flex items-center justify-center">
-
-                    {/* Visual Loading State */}
-                    {isGenerating && (
-                        <div id="loading-overlay" className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center space-y-6 animate-in fade-in duration-300">
-                            <div className="relative w-24 h-24">
-                                <div className="absolute inset-0 border-t-2 border-purple-500 rounded-full animate-spin"></div>
-                                <div className="absolute inset-2 border-r-2 border-blue-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
-                                <div className="absolute inset-4 border-b-2 border-pink-500 rounded-full animate-spin [animation-duration:1s]"></div>
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-xl font-bold text-white tracking-tight">Generating Neural Assets</h3>
-                                <p className="text-sm text-purple-400 font-mono">Resolving physics engine...</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Error State */}
-                    {error && (
-                        <div id="error-message" className="absolute inset-0 z-20 bg-red-950/20 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
-                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
-                                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <p className="text-red-400 font-mono text-sm max-w-md">{error}</p>
-                        </div>
-                    )}
-
-                    {gameData ? (
-                        <GamePlayer
-                            key={gameData.gameCode.slice(0, 100)}
-                            gameData={gameData}
-                            isInline={true}
-                        />
-                    ) : (
-                        !isGenerating && (
-                            <div className="text-center opacity-20 hover:opacity-100 transition-opacity duration-500 select-none">
-                                <div className="text-6xl mb-4 font-thin tracking-tighter text-white">GAME<span className="font-bold text-purple-500">OS</span></div>
-                                <p className="font-mono text-xs tracking-[0.3em] text-white">READY FOR INITIALIZATION</p>
-                            </div>
-                        )
-                    )}
-                </div>
-            </div>
-
-            {/* FULLSCREEN MODAL */}
-            {isPlaying && gameData && (
-                <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 lg:p-12 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="w-full h-full relative bg-[#050505] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden ring-1 ring-white/5">
-                        <GamePlayer gameData={gameData} isInline={false} onClose={() => setIsPlaying(false)} />
-                    </div>
-                </div>
-            )}
+            </AnimatePresence>
         </div>
     );
 }

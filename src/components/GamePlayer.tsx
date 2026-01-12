@@ -257,49 +257,6 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                 </div>
             </div>
 
-            {/* MOD CONTROLS PANEL */}
-            {Object.keys(modVars).length > 0 && (
-                <div className="absolute top-4 left-4 z-40 bg-black/80 backdrop-blur border border-purple-500/30 rounded-xl p-4 w-64 shadow-2xl">
-                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <span>⚙️</span> Mod Console
-                    </h3>
-                    <div className="space-y-3">
-                        {Object.entries(modVars).map(([key, value]) => (
-                            <div key={key} className="space-y-1">
-                                <div className="flex justify-between text-[10px] text-gray-400 font-mono">
-                                    <span>{key}</span>
-                                    <span className="text-white">{typeof value === 'number' ? value.toFixed(1) : String(value)}</span>
-                                </div>
-                                {typeof value === 'number' ? (
-                                    <input
-                                        type="range"
-                                        min={0}
-                                        max={value > 10 ? 100 : 20}
-                                        step={0.1}
-                                        value={value}
-                                        onChange={(e) => handleModChange(key, parseFloat(e.target.value))}
-                                        className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                    />
-                                ) : typeof value === 'boolean' ? (
-                                    <button
-                                        onClick={() => handleModChange(key, !value)}
-                                        className={`w-full py-1 text-xs rounded border ${value ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-red-500/20 border-red-500 text-red-400'}`}
-                                    >
-                                        {value ? 'ENABLED' : 'DISABLED'}
-                                    </button>
-                                ) : (
-                                    <input
-                                        type="color"
-                                        value={value}
-                                        onChange={(e) => handleModChange(key, e.target.value)}
-                                        className="w-full h-6 rounded cursor-pointer"
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             {/* OYUN ALANI */}
             <div className={`relative flex-1 flex flex-col justify-center items-center p-4 ${isInline ? '' : 'p-8'}`}>
