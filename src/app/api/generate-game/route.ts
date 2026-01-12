@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AI_CONFIG } from '@/config/ai';
 
 // Base prompt for new game creation
-
 const SYSTEM_PROMPT = `Sen hem bir Oyun Tasarımı Uzmanı hem de deneyimli bir p5.js Geliştiricisisin. Kullanıcının girdiği oyun fikrini analiz et ve aşağıdaki şemaya uygun bir JSON objesi döndür.
 
 JSON Formatı:
@@ -331,6 +330,9 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
 }
 
 export async function POST(request: NextRequest) {
+    // DEBUG: Log API Key existence (safe log)
+    console.log("DEBUG: API Key checking:", !!(process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY));
+
     let description = "";
     let previousGameData = null;
 
@@ -350,23 +352,25 @@ export async function POST(request: NextRequest) {
         // ========== API KEY VALIDATION ==========
         const apiKey = AI_CONFIG.apiKey;
 
-        console.log('\n🔑 API Key Check:');
-        console.log('  - OPENROUTER_API_KEY exists:', !!process.env.OPENROUTER_API_KEY);
-        console.log('  - NEXT_PUBLIC_OPENROUTER_API_KEY exists:', !!process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
-        console.log('  - Final apiKey exists:', !!apiKey);
-        console.log('  - apiKey length:', apiKey ? apiKey.length : 0);
-        console.log('  - apiKey preview:', apiKey ? `${apiKey.slice(0, 10)}...${apiKey.slice(-5)}` : 'MISSING');
-
         if (!apiKey) {
             console.error('❌ API KEY MISSING!');
-            console.error('Please set OPENROUTER_API_KEY in .env.local');
-            throw new Error('API Key configuration missing');
+            // Return explicit error to frontend
+            return NextResponse.json({
+                success: false,
+                error: 'NO_API_KEY',
+                message: 'API Key configuration missing. Set OPENROUTER_API_KEY in .env.local'
+            }, { status: 400 });
         }
 
         // ========== OPENROUTER API REQUEST ==========
         const apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+
+        // Hardcoded Referer as requested
+        const REFERER = "http://localhost:3000";
+        const APP_TITLE = "Game Factory";
+
         const requestBody = {
-            "model": "google/gemini-2.0-flash-exp-1206",
+            "model": "google/gemini-2.0-flash-001",
             "messages": [
                 {
                     "role": "system",
@@ -385,16 +389,14 @@ export async function POST(request: NextRequest) {
 
         console.log('\n📡 OpenRouter Request:');
         console.log('  - URL:', apiUrl);
-        console.log('  - Model:', requestBody.model);
-        console.log('  - System Prompt Length:', requestBody.messages[0].content.length);
-        console.log('  - User Prompt:', requestBody.messages[1].content.slice(0, 100));
+        console.log('  - Headers Referer:', REFERER);
 
         const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "https://game-factory.mantle.xyz",
-                "X-Title": "Game Factory - AI Game Generator",
+                "HTTP-Referer": REFERER,
+                "X-Title": APP_TITLE,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody)
@@ -402,39 +404,24 @@ export async function POST(request: NextRequest) {
 
         console.log('\n📥 OpenRouter Response:');
         console.log('  - Status:', response.status, response.statusText);
-        console.log('  - OK:', response.ok);
 
         // ========== ERROR HANDLING ==========
         if (!response.ok) {
             console.error('\n❌ OpenRouter API Error:');
-            console.error('  - Status:', response.status);
-            console.error('  - Status Text:', response.statusText);
+            const errorText = await response.text();
+            console.error('  - Error Body:', errorText);
 
-            let errorBody;
-            try {
-                errorBody = await response.json();
-                console.error('  - Error Body (JSON):', JSON.stringify(errorBody, null, 2));
-            } catch {
-                errorBody = await response.text();
-                console.error('  - Error Body (Text):', errorBody);
-            }
-
-            // Common error messages
-            if (response.status === 401) {
-                console.error('\n🔐 AUTHENTICATION FAILED!');
-                console.error('  - Your API key is invalid or expired');
-                console.error('  - Check: https://openrouter.ai/keys');
-            } else if (response.status === 402) {
-                console.error('\n💳 INSUFFICIENT CREDITS!');
-                console.error('  - Your OpenRouter account has no credits');
-                console.error('  - Add credits: https://openrouter.ai/credits');
-            } else if (response.status === 429) {
-                console.error('\n⏱️ RATE LIMIT EXCEEDED!');
-                console.error('  - Too many requests');
-                console.error('  - Wait a moment and try again');
-            }
-
-            throw new Error(`OpenRouter API Error: ${response.status} - ${JSON.stringify(errorBody)}`);
+            // Return specific error to frontend to exit "Simulation Mode" loops
+            return NextResponse.json({
+                success: false,
+                isMock: false,
+                error: `API_ERROR_${response.status}`,
+                message: errorText,
+                details: {
+                    status: response.status,
+                    statusText: response.statusText
+                }
+            }, { status: response.status });
         }
 
         // ========== PARSE RESPONSE ==========
