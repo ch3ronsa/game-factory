@@ -11,7 +11,6 @@ export default function CreatePage() {
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[120px]"></div>
                 <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-900/10 rounded-full blur-[120px]"></div>
-                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]"></div>
             </div>
 
             {/* Header - Minimalist */}
