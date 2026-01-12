@@ -185,7 +185,9 @@ export function GameDescriptionForm() {
                                     id="userInput"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="// Initialize game parameters...\n// E.g. Pixel Art Platformer with double-jump mechanics..."
+                                    placeholder={gameData
+                                        ? "Mevcut oyunu nasıl geliştir elim? (Örn: Düşman ekle, yerçekimini azalt, power-up sistemi ekle)"
+                                        : "// Initialize game parameters...\n// E.g. Pixel Art Platformer with double-jump mechanics..."}
                                     className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-5 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
                                 />
                                 <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
@@ -213,7 +215,7 @@ export function GameDescriptionForm() {
                                 </>
                             ) : (
                                 <>
-                                    <span>{gameData ? 'REVISE & UPDATE ENGINE' : 'INITIALIZE ENGINE'}</span>
+                                    <span>{gameData ? 'EVOLVE ENGINE' : 'INITIALIZE ENGINE'}</span>
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                                 </>
                             )}
@@ -390,7 +392,11 @@ export function GameDescriptionForm() {
                     )}
 
                     {gameData ? (
-                        <GamePlayer gameData={gameData} isInline={true} />
+                        <GamePlayer
+                            key={gameData.gameCode.slice(0, 100)}
+                            gameData={gameData}
+                            isInline={true}
+                        />
                     ) : (
                         !isGenerating && (
                             <div className="text-center opacity-20 hover:opacity-100 transition-opacity duration-500 select-none">
