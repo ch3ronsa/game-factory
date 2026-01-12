@@ -1,4 +1,4 @@
-﻿# GAME FACTORY - COMPLETE PROJECT CODE
+﻿# GAME FACTORY - COMPLETE PROJECT CODE (Updated: 2026-01-12 13:43)
 
 
 
@@ -569,683 +569,6 @@ SDK.submitScore(100);
 ```
 
 The new API is much simpler and easier to use!
-
-
-========================================
-FILE: REMIX_GUIDE.md
-========================================
-
-# Remix.gg Style Modding - Usage Examples
-
-## ğŸ¨ Schema Definition (Moddable Parameters)
-
-### Basic Example
-
-```javascript
-async function setup() {
-    createCanvas(windowWidth, windowHeight);
-    
-    // Initialize SDK
-    await SDK.init({ debug: true });
-    
-    // Define what can be modded
-    SDK.schema.defineSchema([
-        {
-            key: 'playerSpeed',
-            type: 'range',
-            label: 'Player Speed',
-            defaultValue: 5,
-            min: 1,
-            max: 10,
-            step: 0.5,
-            description: 'How fast the player moves'
-        },
-        {
-            key: 'gravity',
-            type: 'number',
-            label: 'Gravity',
-            defaultValue: 0.5,
-            min: 0,
-            max: 2
-        },
-        {
-            key: 'backgroundColor',
-            type: 'color',
-            label: 'Background Color',
-            defaultValue: '#000000'
-        },
-        {
-            key: 'enableParticles',
-            type: 'boolean',
-            label: 'Enable Particles',
-            defaultValue: true
-        }
-    ]);
-}
-```
-
-### Using Schema Values in Game
-
-```javascript
-let playerSpeed;
-let gravity;
-let bgColor;
-
-function setup() {
-    // ... SDK init and schema definition ...
-    
-    // Get initial values
-    playerSpeed = SDK.schema.getValue('playerSpeed');
-    gravity = SDK.schema.getValue('gravity');
-    bgColor = SDK.schema.getValue('backgroundColor');
-    
-    // Listen for real-time updates
-    SDK.schema.onUpdate((key, value) => {
-        console.log(`${key} changed to ${value}`);
-        
-        // Update game variables in real-time
-        if (key === 'playerSpeed') playerSpeed = value;
-        if (key === 'gravity') gravity = value;
-        if (key === 'backgroundColor') bgColor = value;
-    });
-}
-
-function draw() {
-    // Use the moddable values
-    background(bgColor);
-    
-    // Player movement with moddable speed
-    if (keyIsDown(LEFT_ARROW)) {
-        playerX -= playerSpeed;
-    }
-    if (keyIsDown(RIGHT_ARROW)) {
-        playerX += playerSpeed;
-    }
-    
-    // Apply moddable gravity
-    playerVelocityY += gravity;
-}
-```
-
-## ğŸ–¼ï¸ Asset Mapping (Sprite Replacement)
-
-### Basic Asset Mapping
-
-```javascript
-async function setup() {
-    createCanvas(windowWidth, windowHeight);
-    await SDK.init();
-    
-    // Map original assets to remix URLs
-    SDK.assets.mapAssets([
-        {
-            originalUrl: '/sprites/player.png',
-            remixUrl: 'https://example.com/custom-player.png',
-            type: 'sprite'
-        },
-        {
-            originalUrl: '/sprites/enemy.png',
-            remixUrl: 'https://example.com/custom-enemy.png',
-            type: 'sprite'
-        },
-        {
-            originalUrl: '/sounds/jump.mp3',
-            remixUrl: 'https://example.com/custom-jump.mp3',
-            type: 'audio'
-        }
-    ]);
-}
-```
-
-### Loading Remixed Images
-
-```javascript
-let playerSprite;
-let enemySprite;
-
-async function preload() {
-    // SDK automatically uses remixed URLs if available
-    playerSprite = await SDK.assets.loadImage('/sprites/player.png');
-    enemySprite = await SDK.assets.loadImage('/sprites/enemy.png');
-}
-
-function draw() {
-    background(0);
-    
-    // Draw with potentially remixed sprites
-    image(playerSprite, playerX, playerY);
-    image(enemySprite, enemyX, enemyY);
-}
-```
-
-### With p5.js loadImage Integration
-
-```javascript
-let playerImg;
-
-function preload() {
-    // Get the remixed URL
-    const playerUrl = SDK.assets.getAssetUrl('/sprites/player.png');
-    
-    // Use with p5.js
-    playerImg = loadImage(playerUrl);
-}
-```
-
-## ğŸ”„ Real-time Updates from Parent Window
-
-### Parent Window Code (Remix UI)
-
-```javascript
-// Send variable update to game iframe
-const gameIframe = document.getElementById('game-iframe');
-
-gameIframe.contentWindow.postMessage({
-    type: 'UPDATE_VARIABLE',
-    data: {
-        key: 'playerSpeed',
-        value: 8
-    }
-}, '*');
-
-// Bulk update multiple variables
-gameIframe.contentWindow.postMessage({
-    type: 'BULK_UPDATE',
-    data: {
-        playerSpeed: 8,
-        gravity: 1.2,
-        backgroundColor: '#ff0000'
-    }
-}, '*');
-
-// Update assets
-gameIframe.contentWindow.postMessage({
-    type: 'UPDATE_ASSETS',
-    data: {
-        mappings: [
-            {
-                originalUrl: '/sprites/player.png',
-                remixUrl: 'https://new-url.com/player.png',
-                type: 'sprite'
-            }
-        ]
-    }
-}, '*');
-```
-
-### Game Code (Receives Updates)
-
-```javascript
-// Updates are automatically handled by SDK
-// Just subscribe to changes:
-
-SDK.schema.onUpdate((key, value) => {
-    console.log(`Remix update: ${key} = ${value}`);
-    
-    // Apply changes immediately
-    switch(key) {
-        case 'playerSpeed':
-            player.speed = value;
-            break;
-        case 'gravity':
-            world.gravity = value;
-            break;
-        case 'backgroundColor':
-            bgColor = color(value);
-            break;
-    }
-});
-```
-
-## ğŸ® Complete Remix-Ready Game Example
-
-```javascript
-// Game variables
-let player = {
-    x: 200,
-    y: 200,
-    speed: 5,
-    size: 30,
-    sprite: null
-};
-
-let world = {
-    gravity: 0.5,
-    bgColor: '#000000'
-};
-
-let particles = [];
-let particlesEnabled = true;
-
-async function preload() {
-    // Load sprites (will use remixed versions if available)
-    player.sprite = await SDK.assets.loadImage('/sprites/player.png');
-}
-
-async function setup() {
-    createCanvas(windowWidth, windowHeight);
-    
-    // Initialize SDK
-    await SDK.init({ gameId: 'my-remix-game', debug: true });
-    
-    // Define moddable schema
-    SDK.schema.defineSchema([
-        { key: 'playerSpeed', type: 'range', label: 'Speed', defaultValue: 5, min: 1, max: 15 },
-        { key: 'playerSize', type: 'range', label: 'Size', defaultValue: 30, min: 10, max: 100 },
-        { key: 'gravity', type: 'number', label: 'Gravity', defaultValue: 0.5, min: 0, max: 3 },
-        { key: 'bgColor', type: 'color', label: 'Background', defaultValue: '#000000' },
-        { key: 'particlesEnabled', type: 'boolean', label: 'Particles', defaultValue: true }
-    ]);
-    
-    // Map assets
-    SDK.assets.mapAssets([
-        { originalUrl: '/sprites/player.png', remixUrl: '/sprites/player.png', type: 'sprite' }
-    ]);
-    
-    // Listen for real-time updates
-    SDK.schema.onUpdate((key, value) => {
-        if (key === 'playerSpeed') player.speed = value;
-        if (key === 'playerSize') player.size = value;
-        if (key === 'gravity') world.gravity = value;
-        if (key === 'bgColor') world.bgColor = value;
-        if (key === 'particlesEnabled') particlesEnabled = value;
-    });
-    
-    // Listen for asset updates
-    SDK.assets.onAssetLoad((url, success) => {
-        console.log(`Asset ${url} loaded: ${success}`);
-    });
-    
-    // Start game
-    await SDK.lifecycle.start();
-}
-
-function draw() {
-    // Use moddable background color
-    background(world.bgColor);
-    
-    // Player movement with moddable speed
-    if (keyIsDown(LEFT_ARROW)) player.x -= player.speed;
-    if (keyIsDown(RIGHT_ARROW)) player.x += player.speed;
-    if (keyIsDown(UP_ARROW)) player.y -= player.speed;
-    if (keyIsDown(DOWN_ARROW)) player.y += player.speed;
-    
-    // Draw player with moddable size and potentially remixed sprite
-    if (player.sprite) {
-        image(player.sprite, player.x, player.y, player.size, player.size);
-    } else {
-        fill(255);
-        rect(player.x, player.y, player.size, player.size);
-    }
-    
-    // Particles (if enabled)
-    if (particlesEnabled && frameCount % 5 === 0) {
-        particles.push({ x: player.x, y: player.y, life: 255 });
-    }
-    
-    // Update and draw particles
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.y += world.gravity;
-        p.life -= 5;
-        
-        fill(255, p.life);
-        ellipse(p.x, p.y, 5);
-        
-        if (p.life <= 0) particles.splice(i, 1);
-    }
-}
-
-async function keyPressed() {
-    if (key === 'q') {
-        await SDK.lifecycle.finish(score);
-    }
-}
-```
-
-## ğŸ“¡ Message Protocol
-
-### Messages Sent by Game (to Parent)
-
-```typescript
-// Schema defined
-{
-    type: 'SCHEMA_DEFINED',
-    data: {
-        schema: { properties: [...] },
-        currentValues: { playerSpeed: 5, gravity: 0.5 }
-    }
-}
-
-// Assets manifest
-{
-    type: 'ASSETS_MANIFEST',
-    data: {
-        assets: [
-            { originalUrl: '...', remixUrl: '...', type: 'sprite' }
-        ]
-    }
-}
-```
-
-### Messages Received by Game (from Parent)
-
-```typescript
-// Update single variable
-{
-    type: 'UPDATE_VARIABLE',
-    data: { key: 'playerSpeed', value: 8 }
-}
-
-// Bulk update
-{
-    type: 'BULK_UPDATE',
-    data: { playerSpeed: 8, gravity: 1.2 }
-}
-
-// Update assets
-{
-    type: 'UPDATE_ASSETS',
-    data: {
-        mappings: [...]
-    }
-}
-
-// Request current schema
-{
-    type: 'REQUEST_SCHEMA'
-}
-```
-
-## ğŸ¯ Best Practices
-
-1. **Always define schema early** - Call `defineSchema()` in `setup()`
-2. **Use onUpdate for reactivity** - Subscribe to changes instead of polling
-3. **Validate values** - SDK automatically validates against schema
-4. **Preload assets** - Use `SDK.assets.loadImage()` in `preload()`
-5. **Test with mock data** - Send test messages from console during development
-
-```javascript
-// Test in browser console:
-window.postMessage({
-    type: 'UPDATE_VARIABLE',
-    data: { key: 'playerSpeed', value: 10 }
-}, '*');
-```
-
-
-========================================
-FILE: SDK_USAGE.md
-========================================
-
-# Game Factory SDK - KullanÄ±m KÄ±lavuzu
-
-## ğŸ“¦ Kurulum
-
-SDK otomatik olarak oyun iframe'ine yÃ¼klenir. Oyun kodunuzda `window.SDK` Ã¼zerinden eriÅŸebilirsiniz.
-
-## ğŸš€ HÄ±zlÄ± BaÅŸlangÄ±Ã§
-
-### Temel KullanÄ±m
-
-```javascript
-// 1. SDK'yÄ± baÅŸlat
-async function setup() {
-    createCanvas(windowWidth, windowHeight);
-    
-    // SDK'yÄ± initialize et
-    await SDK.init();
-    
-    // Oyunu baÅŸlat
-    await SDK.lifecycle.start();
-}
-
-// 2. Oyun dÃ¶ngÃ¼sÃ¼
-function draw() {
-    background(0);
-    // Oyun mantÄ±ÄŸÄ±nÄ±z...
-}
-
-// 3. Oyun bittiÄŸinde
-async function gameOver() {
-    const finalScore = 1000;
-    await SDK.lifecycle.finish(finalScore);
-    await SDK.score.send({ value: finalScore });
-}
-```
-
-## ğŸ“š API ReferansÄ±
-
-### SDK.init()
-
-SDK'yÄ± baÅŸlatÄ±r. Oyunun baÅŸÄ±nda bir kez Ã§aÄŸrÄ±lmalÄ±dÄ±r.
-
-```javascript
-await SDK.init({ 
-    gameId: 'my-game',  // Opsiyonel
-    debug: true         // Opsiyonel: Debug loglarÄ± iÃ§in
-});
-```
-
-### SDK.lifecycle
-
-Oyun yaÅŸam dÃ¶ngÃ¼sÃ¼nÃ¼ yÃ¶netir.
-
-#### start()
-Oyunu baÅŸlatÄ±r.
-```javascript
-await SDK.lifecycle.start();
-```
-
-#### finish(score)
-Oyunu bitirir ve final skorunu gÃ¶nderir.
-```javascript
-await SDK.lifecycle.finish(1500);
-```
-
-#### pause()
-Oyunu duraklatÄ±r.
-```javascript
-SDK.lifecycle.pause();
-```
-
-#### resume()
-Oyunu devam ettirir.
-```javascript
-SDK.lifecycle.resume();
-```
-
-#### onUpdate(callback)
-Oyun durumu deÄŸiÅŸtiÄŸinde Ã§aÄŸrÄ±lÄ±r.
-```javascript
-const unsubscribe = SDK.lifecycle.onUpdate((state) => {
-    console.log('Game state:', state);
-    // state.status: 'idle' | 'playing' | 'paused' | 'finished'
-    // state.score: number
-    // state.level: number
-});
-
-// Dinlemeyi durdurmak iÃ§in:
-unsubscribe();
-```
-
-### SDK.score
-
-Skor yÃ¶netimi.
-
-#### send(scoreData)
-Skor gÃ¶nderir.
-```javascript
-await SDK.score.send({ 
-    value: 1000,
-    metadata: { level: 5, combo: 10 }  // Opsiyonel
-});
-```
-
-#### getCurrent()
-Mevcut skoru dÃ¶ndÃ¼rÃ¼r.
-```javascript
-const currentScore = SDK.score.getCurrent();
-```
-
-#### getHigh()
-En yÃ¼ksek skoru dÃ¶ndÃ¼rÃ¼r (localStorage'dan).
-```javascript
-const highScore = SDK.score.getHigh();
-```
-
-#### reset()
-Mevcut skoru sÄ±fÄ±rlar.
-```javascript
-SDK.score.reset();
-```
-
-## ğŸ”„ Farcade'den GeÃ§iÅŸ
-
-Eski Farcade SDK kodlarÄ±nÄ±z otomatik olarak Ã§alÄ±ÅŸacaktÄ±r. Ancak yeni API'ye geÃ§menizi Ã¶neririz:
-
-### Eski Kod (Farcade)
-```javascript
-await farcade.init();
-await farcade.gameStart();
-await farcade.submitScore(1000);
-await farcade.gameEnd();
-```
-
-### Yeni Kod (Game Factory SDK)
-```javascript
-await SDK.init();
-await SDK.lifecycle.start();
-await SDK.score.send({ value: 1000 });
-await SDK.lifecycle.finish(1000);
-```
-
-## ğŸ’¡ Ã–rnek Oyun
-
-```javascript
-let score = 0;
-let gameActive = false;
-
-async function setup() {
-    createCanvas(windowWidth, windowHeight);
-    
-    // SDK baÅŸlat
-    await SDK.init({ debug: true });
-    
-    // State deÄŸiÅŸikliklerini dinle
-    SDK.lifecycle.onUpdate((state) => {
-        console.log('Game status:', state.status);
-    });
-}
-
-async function mousePressed() {
-    if (!gameActive) {
-        // Oyunu baÅŸlat
-        await SDK.lifecycle.start();
-        gameActive = true;
-        score = 0;
-    } else {
-        // Skor artÄ±r
-        score += 10;
-        await SDK.score.send({ value: score });
-    }
-}
-
-async function keyPressed() {
-    if (key === 'q' && gameActive) {
-        // Oyunu bitir
-        gameActive = false;
-        await SDK.lifecycle.finish(score);
-    }
-}
-
-function draw() {
-    background(0);
-    fill(255);
-    textSize(32);
-    textAlign(CENTER, CENTER);
-    
-    if (gameActive) {
-        text(`Score: ${score}`, width/2, height/2);
-        text('Click to score, Q to quit', width/2, height/2 + 50);
-    } else {
-        text('Click to Start', width/2, height/2);
-    }
-}
-```
-
-## ğŸ›¡ï¸ Hata YÃ¶netimi
-
-SDK otomatik olarak hatalarÄ± yÃ¶netir ve parent window yanÄ±t vermese bile oyun donmaz:
-
-```javascript
-try {
-    await SDK.score.send({ value: score });
-} catch (error) {
-    console.log('Score submission failed, but game continues');
-}
-```
-
-## ğŸ” Debug Modu
-
-Debug modunu aktif etmek iÃ§in:
-
-```javascript
-await SDK.init({ debug: true });
-```
-
-Console'da ÅŸu loglarÄ± gÃ¶receksiniz:
-- `[GameFactorySDK]` - Ana SDK mesajlarÄ±
-- `[ScoreModule]` - Skor iÅŸlemleri
-- `[LifecycleModule]` - YaÅŸam dÃ¶ngÃ¼sÃ¼ olaylarÄ±
-
-## ğŸ“ Parent Window Ä°letiÅŸimi
-
-SDK otomatik olarak parent window ile `postMessage` Ã¼zerinden iletiÅŸim kurar:
-
-**GÃ¶nderilen Mesajlar:**
-- `SDK_READY` - SDK hazÄ±r
-- `GAME_START` - Oyun baÅŸladÄ±
-- `GAME_END` - Oyun bitti
-- `SCORE_SUBMIT` - Skor gÃ¶nderildi
-
-**AlÄ±nan Mesajlar:**
-- `REQUEST_STATE` - Durum bilgisi istendi
-- `RESET_GAME` - Oyunu sÄ±fÄ±rla
-
-## ğŸ¯ Best Practices
-
-1. **Her zaman async/await kullanÄ±n**
-   ```javascript
-   await SDK.init();  // âœ… DoÄŸru
-   SDK.init();        // âŒ YanlÄ±ÅŸ
-   ```
-
-2. **Oyun baÅŸÄ±nda init() Ã§aÄŸÄ±rÄ±n**
-   ```javascript
-   async function setup() {
-       await SDK.init();
-       // DiÄŸer setup kodu...
-   }
-   ```
-
-3. **State deÄŸiÅŸikliklerini dinleyin**
-   ```javascript
-   SDK.lifecycle.onUpdate((state) => {
-       if (state.status === 'finished') {
-           // Oyun bitti, cleanup yap
-       }
-   });
-   ```
-
-4. **Hata durumlarÄ±nÄ± handle edin**
-   ```javascript
-   try {
-       await SDK.score.send({ value: score });
-   } catch (error) {
-       // Fallback logic
-   }
-   ```
 
 
 ========================================
@@ -1925,12 +1248,12 @@ JSON FormatÄ±:
   "visualStyle": "GÃ¶rsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
   "startingScene": "Oyunun baÅŸlangÄ±Ã§ sahnesinin atmosferik betimlemesi",
   "playerActions": ["SaldÄ±r", "KaÃ§", "KeÅŸfet" gibi oyunun baÅŸlangÄ±cÄ±nda yapÄ±labilecek 3 eylem],
-  "gameCode": "TAM OYNANABILIR p5.js KODU. SDK KULLANIMI: 1) Oyun baÅŸÄ±nda SDK.registerRemix({ playerSpeed: 5, gravity: 0.5 }) ile remix edilebilir deÄŸiÅŸkenleri tanÄ±mla. 2) SDK.onRemixUpdate((vars) => { playerSpeed = vars.playerSpeed; }) ile deÄŸiÅŸiklikleri dinle. 3) SDK.getVar('playerSpeed') ile deÄŸiÅŸken deÄŸerlerini al. 4) SDK.gameReady() ile oyunun hazÄ±r olduÄŸunu bildir. 5) SDK.gameStart() ile oyunu baÅŸlat. 6) SDK.submitScore(score) ile skor gÃ¶nder. 7) SDK.gameEnd(finalScore) ile oyunu bitir. 8) Sadece saf JavaScript kodu yaz, HTML taglarÄ± OLMASIN. 9) setup() ve draw() fonksiyonlarÄ±nÄ± mutlaka iÃ§ermeli. 10) Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap. SDK global olarak 'window.SDK' Ã¼zerinden eriÅŸilebilir."
+  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU SDK ENTEGRASYONU: Oyun kodunun EN BAÅINDA (setup fonksiyonunun iÃ§inde) MUTLAKA ÅŸu satÄ±rlarÄ± ekle: SDK.registerMods({ playerSpeed: 5, gravity: 0.8, jumpPower: 10 }); ve SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; jumpPower = vars.jumpPower; }); ArdÄ±ndan SDK.gameReady(); ve SDK.gameStart(); Ã§aÄŸÄ±r. Oyun bittiÄŸinde SDK.gameEnd(score); kullan. Skor gÃ¼ncellemek iÃ§in SDK.submitScore(score) veya SDK.addScore(10) kullan. Ã–RNEK KOD YAPISI: let playerSpeed = 5; let gravity = 0.8; let score = 0; function setup() { createCanvas(windowWidth, windowHeight); SDK.registerMods({ playerSpeed: 5, gravity: 0.8 }); SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; }); SDK.gameReady(); SDK.gameStart(); } function draw() { background(0); /* oyun mantÄ±ÄŸÄ± */ SDK.submitScore(score); } function keyPressed() { if (key === 'q') SDK.gameEnd(score); } - Sadece saf JavaScript kodu yaz, HTML taglarÄ± OLMASIN. Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap."
 }
 
-Ã–NEMLÄ°: SADECE geÃ§erli JSON dÃ¶ndÃ¼r, baÅŸka hiÃ§bir aÃ§Ä±klama veya metin ekleme. gameCode alanÄ±na p5.js CDN linki ekleme, sadece JavaScript kodu yaz.`;
+KRÄ°TÄ°K: gameCode iÃ§inde SDK.registerMods() Ã§aÄŸrÄ±sÄ± ZORUNLUDUR! Bu olmadan oyun Ã§alÄ±ÅŸmaz. SADECE geÃ§erli JSON dÃ¶ndÃ¼r, baÅŸka hiÃ§bir aÃ§Ä±klama veya metin ekleme.`;
 
-// --- DYNAMIC MOCK GENERATOR (Preserved) ---
+// --- DYNAMIC MOCK GENERATOR (SDK UYUMLU VERSÄ°YON) ---
 function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong', description: string) {
     const r = Math.floor(Math.random() * 255);
     const g = Math.floor(Math.random() * 255);
@@ -1938,18 +1261,239 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
     const words = description.split(' ').slice(0, 3).join(' ');
     const baseName = words.replace(/[^a-zA-Z0-9 ]/g, '') || "Retro";
     const generatedName = baseName.length > 2 ? baseName.charAt(0).toUpperCase() + baseName.slice(1) : `Game ${Math.floor(Math.random() * 100)}`;
-    const commonSetup = `let score=0,themeColor,playerColor,gameState='PLAY';function setup(){createCanvas(windowWidth,windowHeight);themeColor=color(${r},${g},${b});playerColor=color(${255 - r},${255 - b},${255 - g});rectMode(CENTER);textAlign(CENTER);frameRate(60);}function windowResized(){resizeCanvas(windowWidth,windowHeight);}`;
+
+    // ORTAK DEÄÄ°ÅKENLER VE SETUP BAÅLANGICI
+    const commonVars = `let score=0, gameState='PLAY';`;
+
+    // SDK INTEGRATION TEMPLATE
+    const sdkSetup = (modVars: string, updateLogic: string) => `
+        // 1. NOTIFY SDK: Register default settings
+        if(window.SDK) {
+            window.SDK.registerMods({ ${modVars} });
+            
+            // 2. LISTEN: Update when slider changes
+            window.SDK.onModUpdate((vars) => {
+                ${updateLogic}
+            });
+            
+            // 3. READY: Remove loading screen
+            window.SDK.gameReady();
+            window.SDK.gameStart();
+        }
+    `;
+
+    // SKOR GÃ–NDERME YARDIMCISI
+    const submitLogic = `if(window.SDK) window.SDK.submitScore(score);`;
 
     if (genre === 'Snake') {
-        return { gameName: `${generatedName} Snake`, genre: "Classic Arcade", mechanics: ["Grid", "Growth"], levelStructure: "Grid", mantleAssets: ["Apple", "Potion"], difficulty: 5, visualStyle: "Pixelated", startingScene: "Hungry...", playerActions: ["Turn", "Speed"], gameCode: `${commonSetup}let s,scl=20,food;function setup(){createCanvas(windowWidth,windowHeight);themeColor=color(${r},${g},${b});playerColor=color(0,255,100);s=new Snake();pickLocation();frameRate(15);}function pickLocation(){let cols=floor(width/scl),rows=floor(height/scl);food=createVector(floor(random(cols)),floor(random(rows)));food.mult(scl);}function draw(){background(20);if(s.eat(food)){pickLocation();score+=10;}s.death();s.update();s.show();fill(255,0,100);rectMode(CORNER);rect(food.x,food.y,scl,scl);fill(255);textSize(24);textAlign(LEFT);text("Score: "+score,20,30);textAlign(CENTER);}function keyPressed(){if(keyCode===UP_ARROW)s.dir(0,-1);else if(keyCode===DOWN_ARROW)s.dir(0,1);else if(keyCode===RIGHT_ARROW)s.dir(1,0);else if(keyCode===LEFT_ARROW)s.dir(-1,0);}function Snake(){this.x=0;this.y=0;this.xspeed=1;this.yspeed=0;this.total=0;this.tail=[];this.eat=function(pos){let d=dist(this.x,this.y,pos.x,pos.y);if(d<1){this.total++;return true;}else{return false;}};this.dir=function(x,y){this.xspeed=x;this.yspeed=y;};this.death=function(){for(let i=0;i<this.tail.length;i++){let pos=this.tail[i];let d=dist(this.x,this.y,pos.x,pos.y);if(d<1){this.total=0;this.tail=[];score=0;}}};this.update=function(){if(this.total===this.tail.length){for(let i=0;i<this.tail.length-1;i++){this.tail[i]=this.tail[i+1];}}this.tail[this.total-1]=createVector(this.x,this.y);this.x=this.x+this.xspeed*scl;this.y=this.y+this.yspeed*scl;this.x=constrain(this.x,0,width-scl);this.y=constrain(this.y,0,height-scl);};this.show=function(){fill(playerColor);noStroke();rectMode(CORNER);for(let i=0;i<this.tail.length;i++){rect(this.tail[i].x,this.tail[i].y,scl,scl);}rect(this.x,this.y,scl,scl);}}` };
+        const modVars = `speed: 15, snakeColor: '#00ff00'`;
+        const updateLogic = `frameRate(vars.speed); playerColor = color(vars.snakeColor);`;
+
+        return {
+            gameName: `${generatedName} Snake`,
+            genre: "Classic Arcade",
+            mechanics: ["Grid", "Growth"],
+            levelStructure: "Grid",
+            mantleAssets: ["Apple", "Potion"],
+            difficulty: 5,
+            visualStyle: "Pixelated",
+            startingScene: "Hungry...",
+            playerActions: ["Turn", "Speed"],
+            gameCode: `
+                ${commonVars}
+                let s, scl=20, food, playerColor;
+                
+                function setup(){
+                    createCanvas(windowWidth,windowHeight);
+                    playerColor = color(0,255,100);
+                    frameRate(15);
+                    s = new Snake();
+                    pickLocation();
+                    
+                    ${sdkSetup(modVars, updateLogic)}
+                }
+                
+                function pickLocation(){
+                    let cols=floor(width/scl),rows=floor(height/scl);
+                    food=createVector(floor(random(cols)),floor(random(rows)));
+                    food.mult(scl);
+                }
+                
+                function draw(){
+                    background(20);
+                    if(s.eat(food)){
+                        pickLocation();
+                        score+=10;
+                        ${submitLogic}
+                    }
+                    s.death();
+                    s.update();
+                    s.show();
+                    fill(255,0,100);
+                    rectMode(CORNER);
+                    rect(food.x,food.y,scl,scl);
+                    
+                    fill(255);
+                    textSize(24);
+                    textAlign(LEFT);
+                    text("Score: "+score,20,30);
+                }
+                
+                function keyPressed(){
+                    if(keyCode===UP_ARROW)s.dir(0,-1);
+                    else if(keyCode===DOWN_ARROW)s.dir(0,1);
+                    else if(keyCode===RIGHT_ARROW)s.dir(1,0);
+                    else if(keyCode===LEFT_ARROW)s.dir(-1,0);
+                }
+                
+                function Snake(){
+                    this.x=0;this.y=0;this.xspeed=1;this.yspeed=0;this.total=0;this.tail=[];
+                    this.eat=function(pos){let d=dist(this.x,this.y,pos.x,pos.y);if(d<1){this.total++;return true;}else{return false;}};
+                    this.dir=function(x,y){this.xspeed=x;this.yspeed=y;};
+                    this.death=function(){for(let i=0;i<this.tail.length;i++){let pos=this.tail[i];let d=dist(this.x,this.y,pos.x,pos.y);if(d<1){this.total=0;this.tail=[];score=0;}}};
+                    this.update=function(){if(this.total===this.tail.length){for(let i=0;i<this.tail.length-1;i++){this.tail[i]=this.tail[i+1];}}this.tail[this.total-1]=createVector(this.x,this.y);this.x=this.x+this.xspeed*scl;this.y=this.y+this.yspeed*scl;this.x=constrain(this.x,0,width-scl);this.y=constrain(this.y,0,height-scl);};
+                    this.show=function(){fill(playerColor);noStroke();rectMode(CORNER);for(let i=0;i<this.tail.length;i++){rect(this.tail[i].x,this.tail[i].y,scl,scl);}rect(this.x,this.y,scl,scl);}
+                }
+                function windowResized(){resizeCanvas(windowWidth,windowHeight);}
+            `
+        };
     } else if (genre === 'Pong') {
-        return { gameName: `${generatedName} Pong`, genre: "Sports", mechanics: ["Paddle", "Ball"], levelStructure: "Court", mantleAssets: ["Ball", "Paddle"], difficulty: 3, visualStyle: "Neon", startingScene: "Match Point", playerActions: ["Up", "Down"], gameCode: `${commonSetup}let lp={x:30,y:0,w:20,h:100},rp={x:0,y:0,w:20,h:100},b={x:0,y:0,s:20,a:0,sp:7};function setup(){createCanvas(windowWidth,windowHeight);rp.x=width-30;rp.y=height/2;lp.y=height/2;b.x=width/2;b.y=height/2;b.a=random(TWO_PI);themeColor=color(${r},${g},${b});rectMode(CENTER);}function draw(){background(10);stroke(255,50);line(width/2,0,width/2,height);noStroke();fill(255);rect(lp.x,lp.y,lp.w,lp.h);fill(themeColor);rect(rp.x,rp.y,rp.w,rp.h);fill(255);ellipse(b.x,b.y,b.s);lp.y=mouseY;rp.y=lerp(rp.y,b.y,0.08);b.x+=cos(b.a)*b.sp;b.y+=sin(b.a)*b.sp;if(b.y<0||b.y>height)b.a*=-1;if(b.x-b.s/2<lp.x+lp.w/2&&b.y>lp.y-lp.h/2&&b.y<lp.y+lp.h/2){b.a=PI-b.a;b.sp+=0.5;}if(b.x+b.s/2>rp.x-rp.w/2&&b.y>rp.y-rp.h/2&&b.y<rp.y+rp.h/2)b.a=PI-b.a;if(b.x<0||b.x>width){b.x=width/2;b.y=height/2;b.sp=7;b.a=random(TWO_PI);}}` };
-    } else if (genre === 'Platformer') {
-        return { gameName: `${generatedName} Jump`, genre: "Platformer", mechanics: ["Jump", "Gravity"], levelStructure: "Vertical", mantleAssets: ["Boots", "Jetpack"], difficulty: 4, visualStyle: "Geometric", startingScene: "Climb...", playerActions: ["Jump", "Left", "Right"], gameCode: `${commonSetup}let p={x:200,y:300,w:30,h:30,vy:0,g:false},grav=0.6,jump=-12,plats=[];for(let i=0;i<6;i++)plats.push({x:i*150,y:100+i*80,w:100,h:20});function draw(){background(20);fill(themeColor);rect(width/2,height/2,width-40,height-40);fill(0,180);rect(width/2,height/2,width,height);fill(playerColor);rect(p.x,p.y,p.w,p.h);p.vy+=grav;p.y+=p.vy;if(keyIsDown(LEFT_ARROW))p.x-=5;if(keyIsDown(RIGHT_ARROW))p.x+=5;fill(255);p.g=false;for(let pl of plats){rect(pl.x+pl.w/2,pl.y+pl.h/2,pl.w,pl.h);if(p.x>pl.x&&p.x<pl.x+pl.w&&p.y+p.h/2>pl.y&&p.y+p.h/2<pl.y+pl.h+20&&p.vy>=0){p.y=pl.y-p.h/2;p.vy=0;p.g=true;}}if((keyIsDown(UP_ARROW)||mouseIsPressed)&&p.g)p.vy=jump;if(p.y>height){p.y=0;p.vy=0;score=0;}fill(255);textSize(20);text("${generatedName} Jump",width/2,40);}` };
-    } else if (genre === 'Collector') {
-        return { gameName: `${generatedName} Rush`, genre: "Collector", mechanics: ["Mouse", "Collect"], levelStructure: "Arena", mantleAssets: ["Magnet"], difficulty: 4, visualStyle: "Minimalist", startingScene: "Collect...", playerActions: ["Move"], gameCode: `${commonSetup}let c=[],px=0,py=0;function draw(){background(20);px=lerp(px,mouseX,0.1);py=lerp(py,mouseY,0.1);fill(playerColor);ellipse(px,py,40);if(frameCount%30==0)c.push({x:random(width),y:random(height),s:random(10,30),l:255});for(let i=c.length-1;i>=0;i--){let o=c[i];o.l-=2;fill(themeColor);stroke(255,o.l);ellipse(o.x,o.y,o.s);if(dist(px,py,o.x,o.y)<20+o.s/2){c.splice(i,1);score+=10;}else if(o.l<=0)c.splice(i,1);}noStroke();fill(255);textSize(24);text("Score: "+score,width/2,50);}` };
+        const modVars = `ballSpeed: 7, paddleHeight: 100, aiDifficulty: 0.08`;
+        const updateLogic = `b.sp = vars.ballSpeed; lp.h = vars.paddleHeight; rp.h = vars.paddleHeight; aiSpeed = vars.aiDifficulty;`;
+
+        return {
+            gameName: `${generatedName} Pong`,
+            genre: "Sports",
+            mechanics: ["Paddle", "Ball"],
+            levelStructure: "Court",
+            mantleAssets: ["Ball", "Paddle"],
+            difficulty: 3,
+            visualStyle: "Neon",
+            startingScene: "Match Point",
+            playerActions: ["Up", "Down"],
+            gameCode: `
+                ${commonVars}
+                let lp={x:30,y:0,w:20,h:100}, rp={x:0,y:0,w:20,h:100};
+                let b={x:0,y:0,s:20,a:0,sp:7};
+                let aiSpeed = 0.08;
+                
+                function setup(){
+                    createCanvas(windowWidth,windowHeight);
+                    rp.x=width-30; rp.y=height/2; lp.y=height/2;
+                    b.x=width/2; b.y=height/2; b.a=random(TWO_PI);
+                    rectMode(CENTER);
+                    
+                    ${sdkSetup(modVars, updateLogic)}
+                }
+                
+                function draw(){
+                    background(10);
+                    stroke(255,50); line(width/2,0,width/2,height); noStroke();
+                    
+                    fill(255); rect(lp.x,lp.y,lp.w,lp.h);
+                    fill('#00ff00'); rect(rp.x,rp.y,rp.w,rp.h);
+                    fill(255); ellipse(b.x,b.y,b.s);
+                    
+                    lp.y=mouseY;
+                    rp.y=lerp(rp.y,b.y,aiSpeed);
+                    
+                    b.x+=cos(b.a)*b.sp; b.y+=sin(b.a)*b.sp;
+                    
+                    if(b.y<0||b.y>height) b.a*=-1;
+                    
+                    if(b.x-b.s/2<lp.x+lp.w/2 && b.y>lp.y-lp.h/2 && b.y<lp.y+lp.h/2){
+                        b.a=PI-b.a; b.sp+=0.5; score+=1;
+                        ${submitLogic}
+                    }
+                    if(b.x+b.s/2>rp.x-rp.w/2 && b.y>rp.y-rp.h/2 && b.y<rp.y+rp.h/2) b.a=PI-b.a;
+                    
+                    if(b.x<0||b.x>width){
+                        b.x=width/2; b.y=height/2; b.sp=7; b.a=random(TWO_PI);
+                        score=0;
+                    }
+                    
+                    textSize(32); textAlign(CENTER); text(score, width/2, 50);
+                }
+                function windowResized(){resizeCanvas(windowWidth,windowHeight);}
+            `
+        };
     } else {
-        return { gameName: `${generatedName} Wars`, genre: "Shooter", mechanics: ["Shoot", "Dodge"], levelStructure: "Waves", mantleAssets: ["Laser"], difficulty: 6, visualStyle: "Neon", startingScene: "Defend...", playerActions: ["Shoot", "Move"], gameCode: `${commonSetup}let px,b=[],e=[];function setup(){createCanvas(windowWidth,windowHeight);themeColor=color(${r},${g},${b});rectMode(CENTER);textAlign(CENTER);px=width/2;}function draw(){background(10);fill(255);triangle(px,height-50,px-20,height-20,px+20,height-20);if(keyIsDown(LEFT_ARROW))px-=6;if(keyIsDown(RIGHT_ARROW))px+=6;if(mouseIsPressed&&frameCount%10==0)b.push({x:px,y:height-50});fill(themeColor);for(let i=b.length-1;i>=0;i--){b[i].y-=10;ellipse(b[i].x,b[i].y,10);if(b[i].y<0)b.splice(i,1);}if(frameCount%40==0)e.push({x:random(width),y:-20,s:random(20,50)});for(let i=e.length-1;i>=0;i--){e[i].y+=3;fill(200,50,50);rect(e[i].x,e[i].y,e[i].s,e[i].s);}fill(255);text("${generatedName} Wars",width/2,40);}` };
+        // DEFAULT: PLATFORMER (En yaygÄ±n)
+        const modVars = `playerSpeed: 5, gravity: 0.6, jumpForce: 12, themeColor: '#00ccff'`;
+        const updateLogic = `
+            playerSpeed = vars.playerSpeed; 
+            grav = vars.gravity; 
+            jump = -vars.jumpForce; 
+            themeColor = color(vars.themeColor);
+        `;
+
+        return {
+            gameName: `${generatedName} Jump`,
+            genre: "Platformer",
+            mechanics: ["Jump", "Gravity"],
+            levelStructure: "Vertical",
+            mantleAssets: ["Boots", "Jetpack"],
+            difficulty: 4,
+            visualStyle: "Geometric",
+            startingScene: "Climb...",
+            playerActions: ["Jump", "Left", "Right"],
+            gameCode: `
+                ${commonVars}
+                let p={x:200,y:300,w:30,h:30,vy:0,g:false};
+                let grav=0.6, jump=-12, playerSpeed=5;
+                let plats=[], themeColor;
+                
+                function setup(){
+                    createCanvas(windowWidth,windowHeight);
+                    themeColor = color(0, 204, 255);
+                    
+                    for(let i=0;i<6;i++) plats.push({x:i*150,y:100+i*80,w:100,h:20});
+                    
+                    ${sdkSetup(modVars, updateLogic)}
+                }
+                
+                function draw(){
+                    background(20);
+                    
+                    fill(themeColor);
+                    rect(width/2,height/2,width-40,height-40);
+                    fill(0,180);
+                    rect(width/2,height/2,width,height);
+                    
+                    fill(255);
+                    rect(p.x,p.y,p.w,p.h);
+                    
+                    p.vy+=grav;
+                    p.y+=p.vy;
+                    
+                    if(keyIsDown(LEFT_ARROW)) p.x -= playerSpeed;
+                    if(keyIsDown(RIGHT_ARROW)) p.x += playerSpeed;
+                    
+                    p.g=false;
+                    for(let pl of plats){
+                        rect(pl.x+pl.w/2, pl.y+pl.h/2, pl.w, pl.h);
+                        
+                        if(p.x>pl.x && p.x<pl.x+pl.w && p.y+p.h/2>pl.y && p.y+p.h/2<pl.y+pl.h+20 && p.vy>=0){
+                            p.y=pl.y-p.h/2; p.vy=0; p.g=true;
+                        }
+                    }
+                    
+                    if((keyIsDown(UP_ARROW)||mouseIsPressed) && p.g){
+                        p.vy=jump;
+                        score+=10;
+                        ${submitLogic}
+                    }
+                    
+                    if(p.y>height){
+                        p.y=0; p.vy=0; score=0;
+                    }
+                    
+                    fill(255); textSize(20); textAlign(CENTER);
+                    text("Score: " + score, width/2, 40);
+                }
+                function windowResized(){resizeCanvas(windowWidth,windowHeight);}
+            `
+        };
     }
 }
 
@@ -2024,7 +1568,7 @@ FILE: src/components/GamePlayer.tsx
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface GameData {
@@ -2050,44 +1594,79 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
+
+    // OYUN DURUMLARI (STATE)
+    const [score, setScore] = useState(0);
     const [health, setHealth] = useState(100);
     const [energy, setEnergy] = useState(100);
     const [mETH, setmETH] = useState(0);
 
+    // MOD VARIABLES
+    const [modVars, setModVars] = useState<Record<string, any>>({});
+
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+
+    // ğŸ” DEBUG NOKTA 4: KARÅILAMA ANI - React tarafÄ±ndaki listener
     useEffect(() => {
-        setLogs([`INITIALIZING: ${gameData.gameName}`, `CLASS: ${gameData.genre}`, `VISUALS: ${gameData.visualStyle}`]);
+        const handleMessage = (event: MessageEvent) => {
+            const { type, payload } = event.data || {};
 
-        // Validate gameCode
-        if (!gameData.gameCode || gameData.gameCode.trim() === '') {
-            setHasError(true);
-            setIsLoading(false);
-            return;
+            if (!type) return;
+
+            // ğŸŸ¢ DEBUG LOG 4: Mesaj yakalandÄ±!
+            console.log(
+                '%cğŸ¯ DEBUG 4: KARÅILAMA ANI - React Listener Mesaj YakaladÄ±!',
+                'background: #00ff00; color: #000; font-size: 14px; font-weight: bold; padding: 4px 8px;',
+                '\nğŸ“¨ Type:', type,
+                '\nğŸ“¦ Payload:', payload
+            );
+
+            // LOG SÄ°STEMÄ°
+            if (type.startsWith('SDK_') || type.startsWith('GAME_') || type.startsWith('REGISTER_')) {
+                const logMsg = `> ${type}: ${JSON.stringify(payload).slice(0, 30)}`;
+                setLogs(prev => [logMsg, ...prev].slice(0, 6));
+            }
+
+            // A. Oyun "Benim ayarlarÄ±m bunlar" dediÄŸinde:
+            if (type === 'REGISTER_SCHEMA') {
+                console.log('âœ… UI: Mod Settings Received:', payload);
+                setModVars(payload); // Slider'larÄ± oluÅŸturmak iÃ§in state'i gÃ¼ncelle
+            }
+
+            // B. Oyun "Skor deÄŸiÅŸti" dediÄŸinde:
+            if (type === 'SUBMIT_SCORE' || type === 'GAME_END') {
+                const newScore = payload.score !== undefined ? payload.score : payload;
+                setScore(newScore);
+            }
+        };
+
+        console.log(
+            '%cğŸ§ DEBUG: React Event Listener Kuruldu (window.addEventListener)',
+            'background: #0088ff; color: #fff; font-size: 12px; padding: 4px;'
+        );
+
+        window.addEventListener('message', handleMessage);
+        return () => {
+            console.log('%cğŸ”Œ DEBUG: Event Listener KaldÄ±rÄ±ldÄ±', 'color: #888;');
+            window.removeEventListener('message', handleMessage);
+        };
+    }, []);
+
+    // 2. SENDER - SLIDER CHANGED, NOTIFY GAME
+    const handleModChange = (key: string, value: any) => {
+        // 1. Update UI
+        setModVars(prev => ({ ...prev, [key]: value }));
+
+        // 2. Send postMessage to game (Iframe)
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+            iframeRef.current.contentWindow.postMessage({
+                type: 'UPDATE_MODS',
+                payload: { [key]: value }
+            }, '*');
         }
-
-        // Simulate loading time for iframe initialization
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 1500);
-
-        return () => clearTimeout(timer);
-    }, [gameData]);
-
-    const handleAction = (action: string) => {
-        const newLog = `> ${action} executed`;
-        setLogs(prev => [newLog, ...prev].slice(0, 6));
-
-        const outcome = Math.random();
-        if (outcome > 0.7) {
-            setmETH(prev => prev + 0.1);
-            setLogs(prev => [`> REWARD: 0.1 mETH acquired`, ...prev]);
-        } else if (outcome < 0.2) {
-            setHealth(prev => Math.max(0, prev - 10));
-            setLogs(prev => [`> WARNING: Hull integrity -10%`, ...prev]);
-        }
-
-        setEnergy(prev => Math.max(0, prev - 5));
     };
 
+    // --- IFRAME Ä°Ã‡ERÄ°ÄÄ° VE SDK ENJEKSÄ°YONU (DEBUG MODLU) ---
     const generateIframeSrcDoc = () => {
         return `<!DOCTYPE html>
 <html>
@@ -2095,327 +1674,250 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            background: #000; 
-        }
-        canvas { 
-            display: block; 
-        }
+        body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
 </head>
 <body>
-    <script type="module">
-        // Import GameFactorySDK (inline for now, can be external later)
-        ${getSDKBundle()}
+    <script>
+        // ğŸ” DEBUG NOKTA 1: ENJEKSÄ°YON ANI
+        console.log(
+            '%cğŸš€ DEBUG 1: ENJEKSÄ°YON ANI - SDK Class TanÄ±mlanÄ±yor...',
+            'background: #ff0000; color: #fff; font-size: 14px; font-weight: bold; padding: 4px 8px;'
+        );
+
+        class GameFactorySDK {
+            constructor() {
+                this.vars = {};
+                this.updateCallback = () => {};
+                this.score = 0;
+                this.initMessageListener();
+                
+                // ğŸŸ¢ DEBUG LOG 1: SDK baÅŸarÄ±yla oluÅŸturuldu
+                console.log(
+                    '%câœ… DEBUG 1: SDK Instance OluÅŸturuldu!',
+                    'background: #00ff00; color: #000; font-size: 14px; font-weight: bold; padding: 4px 8px;',
+                    'this:', this
+                );
+            }
+
+            // ğŸ” DEBUG NOKTA 2: TETÄ°KLEME ANI
+            // GAME CALLS THIS TO NOTIFY PARENT
+            registerMods(defaultVars) {
+                this.vars = defaultVars;
+                // IMPORTANT: Parent (React) expects this as 'REGISTER_SCHEMA'
+                this.sendMessage("REGISTER_SCHEMA", defaultVars); 
+            }
+
+            onModUpdate(callback) {
+                this.updateCallback = callback;
+            }
+
+            getVar(key) { return this.vars[key]; }
+            
+            submitScore(score) {
+                this.score = score;
+                this.sendMessage("SUBMIT_SCORE", { score });
+            }
+
+            addScore(value) {
+                this.score += value;
+                this.sendMessage("SUBMIT_SCORE", { score: this.score });
+                return this.score;
+            }
+            
+            setScore(value) {
+                this.score = value;
+                this.sendMessage("SUBMIT_SCORE", { score: this.score });
+            }
+            
+            getScore() { return this.score; }
+
+            gameReady() { 
+                console.log('%cğŸ® gameReady() Ã§aÄŸrÄ±ldÄ±', 'color: #0f0;');
+                this.sendMessage("GAME_READY", true); 
+            }
+            
+            gameStart() { 
+                console.log('%câ–¶ï¸ gameStart() Ã§aÄŸrÄ±ldÄ±', 'color: #0f0;');
+                this.sendMessage("GAME_START", true); 
+            }
+            
+            gameEnd(score) { 
+                console.log('%câ¹ï¸ gameEnd() Ã§aÄŸrÄ±ldÄ±, score:', score, 'color: #f00;');
+                this.sendMessage("GAME_END", { score: score || this.score }); 
+            }
+
+            // ğŸ” DEBUG NOKTA 3: POSTACI ANI
+            sendMessage(type, payload) {
+                console.log(
+                    '%cğŸ“® DEBUG 3: POSTACI ANI - postMessage() Ã‡ALIÅIYOR!',
+                    'background: #ff00ff; color: #fff; font-size: 14px; font-weight: bold; padding: 4px 8px;',
+                    '\\nğŸ“¨ Type:', type,
+                    '\\nğŸ“¦ Payload:', payload,
+                    '\\nğŸ¯ Target: window.parent'
+                );
+                
+                try {
+                    window.parent.postMessage({ type, payload }, "*");
+                    console.log(
+                        '%câœ… postMessage BaÅŸarÄ±lÄ±! Mesaj GÃ¶nderildi.',
+                        'background: #00ff00; color: #000; font-weight: bold; padding: 4px;'
+                    );
+                } catch (error) {
+                    console.error(
+                        '%câŒ postMessage HATASI!',
+                        'background: #ff0000; color: #fff; font-weight: bold; padding: 4px;',
+                        error
+                    );
+                }
+            }
+
+            initMessageListener() {
+                console.log('%cğŸ§ SDK: Message Listener Kuruldu (iframe iÃ§inde)', 'color: #0ff;');
+                window.addEventListener("message", (event) => {
+                    const { type, payload } = event.data || {};
+                    // REACT SENDS UPDATE_MODS
+                    if (type === "UPDATE_MODS") {
+                        this.vars = { ...this.vars, ...payload };
+                        this.updateCallback(this.vars);
+                    }
+                });
+            }
+        }
         
-        // Expose SDK globally for game code
-        window.SDK = SDK;
+        window.SDK = new GameFactorySDK();
         
-        // Load Farcade compatibility shim for legacy code
-        ${getFarcadeShim()}
+        // ğŸŸ¢ FINAL CHECK: SDK window'a atandÄ± mÄ±?
+        console.log(
+            '%cğŸ‰ DEBUG 1 FINAL: window.SDK AtandÄ±!',
+            'background: #00ff00; color: #000; font-size: 16px; font-weight: bold; padding: 8px;',
+            'window.SDK:', window.SDK,
+            '\\nâœ… registerRemix fonksiyonu mevcut mu?', typeof window.SDK.registerMods === 'function'
+        );
     </script>
     <script>
+        // Hata yakalama
+        window.onerror = function(msg, url, line) {
+            console.error('%cğŸ’¥ OYUN HATASI!', 'background: #f00; color: #fff; padding: 4px;', msg, 'Line:', line);
+            window.parent.postMessage({ type: 'SDK_ERROR', payload: msg }, '*');
+        };
+        
+        console.log('%cğŸ® Oyun Kodu YÃ¼kleniyor...', 'background: #333; color: #fff; padding: 4px;');
         ${gameData.gameCode}
+        console.log('%câœ… Oyun Kodu YÃ¼klendi', 'background: #0f0; color: #000; padding: 4px;');
     </script>
 </body>
 </html>`;
     };
 
-    // Bundle SDK for iframe injection
-    const getSDKBundle = () => {
-        return `
-            // Simplified Game Factory SDK
-            class GameFactorySDK {
-                constructor() {
-                    this.vars = {};
-                    this.updateCallback = () => {};
-                    this.score = 0;
-                    this.isReady = false;
-                    this.initMessageListener();
-                }
-
-                // 1. REGISTER REMIX VARIABLES
-                registerRemix(defaultVars) {
-                    this.vars = defaultVars;
-                    this.sendMessage("REGISTER_SCHEMA", defaultVars);
-                    console.log('[SDK] Remix registered:', defaultVars);
-                }
-
-                // 2. LISTEN FOR UPDATES
-                onRemixUpdate(callback) {
-                    this.updateCallback = callback;
-                }
-
-                // 3. GET VARIABLE
-                getVar(key) {
-                    return this.vars[key];
-                }
-
-                // 4. GET ALL VARIABLES
-                getAllVars() {
-                    return { ...this.vars };
-                }
-
-                // 5. SUBMIT SCORE
-                submitScore(score) {
-                    this.score = score;
-                    this.sendMessage("SUBMIT_SCORE", { score });
-                    console.log('[SDK] Score:', score);
-                }
-
-                // 5b. ADD TO SCORE
-                addScore(value) {
-                    this.score += value;
-                    console.log('[SDK] Score added:', value, '-> Total:', this.score);
-                    return this.score;
-                }
-
-                // 5c. SET SCORE
-                setScore(value) {
-                    this.score = value;
-                    console.log('[SDK] Score set:', value);
-                }
-
-                // 5d. GET SCORE
-                getScore() {
-                    return this.score;
-                }
-
-
-                // 6. LIFECYCLE - Ready
-                gameReady() {
-                    this.isReady = true;
-                    this.sendMessage("GAME_READY", true);
-                    console.log('[SDK] Ready');
-                }
-
-                // 7. LIFECYCLE - Start
-                gameStart() {
-                    this.sendMessage("GAME_START", true);
-                    console.log('[SDK] Started');
-                }
-
-                // 8. LIFECYCLE - End
-                gameEnd(finalScore) {
-                    const scoreToSubmit = finalScore ?? this.score;
-                    this.sendMessage("GAME_END", { score: scoreToSubmit });
-                    console.log('[SDK] Ended:', scoreToSubmit);
-                }
-
-                // INTERNAL: Send message
-                sendMessage(type, payload) {
-                    try {
-                        window.parent.postMessage({ type, payload }, "*");
-                    } catch (e) {
-                        console.error('[SDK] Message failed:', e);
-                    }
-                }
-
-                // INTERNAL: Listen for messages
-                initMessageListener() {
-                    window.addEventListener("message", (event) => {
-                        const { type, payload } = event.data || {};
-
-                        if (type === "UPDATE_REMIX") {
-                            this.vars = { ...this.vars, ...payload };
-                            this.updateCallback(this.vars);
-                            console.log('[SDK] Updated:', payload);
-                        } else if (type === "REQUEST_STATE") {
-                            this.sendMessage("STATE_RESPONSE", {
-                                vars: this.vars,
-                                score: this.score,
-                                isReady: this.isReady
-                            });
-                        } else if (type === "RESET_GAME") {
-                            this.score = 0;
-                            console.log('[SDK] Reset');
-                        }
-                    });
-                }
-            }
-
-            // Create singleton
-            const SDK = new GameFactorySDK();
-            window.SDK = SDK;
-        `;
-    };
-
-    const getFarcadeShim = () => {
-        return `
-            // Farcade compatibility shim (uses simplified SDK)
-            window.farcade = {
-                init: () => {
-                    SDK.gameReady();
-                    return Promise.resolve();
-                },
-                gameStart: () => {
-                    SDK.gameStart();
-                    return Promise.resolve();
-                },
-                gameEnd: (score) => {
-                    SDK.gameEnd(score);
-                    return Promise.resolve();
-                },
-                submitScore: (score) => {
-                    SDK.submitScore(score);
-                    return Promise.resolve(true);
-                },
-                getAssets: () => Promise.resolve([])
-            };
-        `;
-    };
-
     return (
         <div className={`flex flex-col h-full w-full bg-[#050505] ${!isInline ? 'relative' : ''}`}>
-            {/* GAME CANVAS - 16:9 Aspect Ratio with Mantle Neon Glow */}
+
+            {/* DEBUG PANEL */}
+            <div className="absolute top-4 right-4 z-50 bg-red-900/90 border-2 border-red-500 rounded-lg p-3 text-white text-xs font-mono max-w-xs">
+                <div className="font-bold text-yellow-300 mb-2">ğŸ” DEBUG MODE ACTIVE</div>
+                <div className="text-[10px] space-y-1">
+                    <div>âœ… Mod Vars: {Object.keys(modVars).length}</div>
+                    <div>ğŸ“Š Score: {score}</div>
+                    <div className="text-yellow-200 mt-2">Console'u aÃ§Ä±n! (F12)</div>
+                </div>
+            </div>
+
+            {/* MOD CONTROLS PANEL */}
+            {Object.keys(modVars).length > 0 && (
+                <div className="absolute top-4 left-4 z-40 bg-black/80 backdrop-blur border border-purple-500/30 rounded-xl p-4 w-64 shadow-2xl">
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span>âš™ï¸</span> Mod Console
+                    </h3>
+                    <div className="space-y-3">
+                        {Object.entries(modVars).map(([key, value]) => (
+                            <div key={key} className="space-y-1">
+                                <div className="flex justify-between text-[10px] text-gray-400 font-mono">
+                                    <span>{key}</span>
+                                    <span className="text-white">{typeof value === 'number' ? value.toFixed(1) : String(value)}</span>
+                                </div>
+                                {typeof value === 'number' ? (
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={value > 10 ? 100 : 20}
+                                        step={0.1}
+                                        value={value}
+                                        onChange={(e) => handleModChange(key, parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                    />
+                                ) : typeof value === 'boolean' ? (
+                                    <button
+                                        onClick={() => handleModChange(key, !value)}
+                                        className={`w-full py-1 text-xs rounded border ${value ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-red-500/20 border-red-500 text-red-400'}`}
+                                    >
+                                        {value ? 'ENABLED' : 'DISABLED'}
+                                    </button>
+                                ) : (
+                                    <input
+                                        type="color"
+                                        value={value}
+                                        onChange={(e) => handleModChange(key, e.target.value)}
+                                        className="w-full h-6 rounded cursor-pointer"
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* OYUN ALANI */}
             <div className={`relative flex-1 flex flex-col justify-center items-center p-4 ${isInline ? '' : 'p-8'}`}>
-
-                {/* 16:9 Container with Neon Glow */}
                 <div className="relative w-full max-w-6xl aspect-video">
-                    {/* Mantle Neon Glow Effect */}
                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-cyan-500 to-purple-600 rounded-2xl blur-xl opacity-75 animate-pulse"></div>
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-cyan-400 to-purple-500 rounded-2xl blur-md opacity-50"></div>
 
-                    {/* Game Container */}
                     <div className="relative bg-black rounded-2xl overflow-hidden border border-purple-500/30 shadow-2xl h-full">
-
-                        {/* Loading State */}
                         {isLoading && (
-                            <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6">
-                                <div className="relative">
-                                    {/* Animated Rings */}
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                        className="w-24 h-24 border-4 border-transparent border-t-purple-500 border-r-cyan-500 rounded-full"
-                                    />
-                                    <motion.div
-                                        animate={{ rotate: -360 }}
-                                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                        className="absolute inset-2 w-20 h-20 border-4 border-transparent border-b-purple-400 border-l-cyan-400 rounded-full"
-                                    />
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        className="absolute inset-4 w-16 h-16 border-4 border-transparent border-t-purple-300 border-r-cyan-300 rounded-full"
-                                    />
-                                </div>
-                                <div className="text-center space-y-2">
-                                    <h3 className="text-xl font-bold text-white tracking-tight">Loading Game Engine</h3>
-                                    <p className="text-sm text-purple-400 font-mono animate-pulse">Initializing Farcade SDK...</p>
-                                </div>
+                            <div className="absolute inset-0 z-30 bg-black/95 flex items-center justify-center">
+                                <div className="text-purple-500 animate-pulse font-mono">INITIALIZING SDK BRIDGE...</div>
                             </div>
                         )}
 
-                        {/* Error State */}
-                        {hasError && !isLoading && (
-                            <div className="absolute inset-0 z-30 bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center gap-6 p-8">
-                                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border-2 border-red-500/30">
-                                    <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                </div>
-                                <div className="text-center space-y-2 max-w-md">
-                                    <h3 className="text-xl font-bold text-red-400">Game Code Missing</h3>
-                                    <p className="text-sm text-gray-400 font-mono">
-                                        The AI-generated game code is empty or invalid. Please try generating a new game.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Game Iframe */}
                         {!hasError && gameData.gameCode && (
                             <iframe
+                                ref={iframeRef}
                                 srcDoc={generateIframeSrcDoc()}
                                 className="absolute inset-0 w-full h-full border-0"
-                                title={`${gameData.gameName}`}
-                                sandbox="allow-scripts"
-                                onLoad={() => setIsLoading(false)}
+                                title={gameData.gameName}
+                                sandbox="allow-scripts allow-same-origin"
+                                onLoad={() => {
+                                    setIsLoading(false);
+                                    console.log('%cğŸ¬ Iframe YÃ¼klendi!', 'background: #0f0; color: #000; font-size: 14px; padding: 4px;');
+                                }}
                             />
                         )}
 
-                        {/* Overlays (HP/Energy) - Only show when game is loaded */}
-                        {!isLoading && !hasError && (
-                            <div className="absolute top-4 left-6 right-6 flex justify-between items-start pointer-events-none z-10">
-                                {/* Status Bars */}
-                                <div className="flex flex-col gap-2 w-48">
-                                    {/* HP */}
-                                    <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
-                                        <motion.div
-                                            animate={{ width: `${health}%` }}
-                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 to-red-400"
-                                        />
-                                    </div>
-                                    <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest pl-1">Hull Integrity {health}%</span>
+                        <div className="absolute top-4 right-6 bg-black/60 backdrop-blur border border-white/10 px-4 py-2 rounded-lg z-10">
+                            <div className="text-xs text-gray-400 font-mono uppercase">Score</div>
+                            <div className="text-2xl font-bold text-white font-mono">{score}</div>
+                        </div>
 
-                                    {/* Energy */}
-                                    <div className="relative h-2 bg-gray-900/50 backdrop-blur rounded overflow-hidden border border-white/10">
-                                        <motion.div
-                                            animate={{ width: `${energy}%` }}
-                                            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-600 to-cyan-400"
-                                        />
-                                    </div>
-                                    <span className="text-[10px] font-mono font-bold text-cyan-500 uppercase tracking-widest pl-1">Energy Cells {energy}%</span>
-                                </div>
-
-                                {/* Currency / Score */}
-                                <div className="flex items-center gap-3 bg-black/40 backdrop-blur border border-white/10 px-4 py-2 rounded-lg">
-                                    <div className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"></div>
-                                    <span className="font-mono text-lg font-bold text-gray-200">{mETH.toFixed(2)}</span>
-                                    <span className="font-mono text-xs text-gray-500">mETH</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Close Button (If Modal) */}
                         {!isInline && (
-                            <button
-                                onClick={onClose}
-                                className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-white/10 border border-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            >
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                            <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-lg">
+                                âœ•
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* CONTROLLER AREA (Below Canvas) */}
-            <div className="bg-[#0f0f11] border-t border-white/5 p-6 z-20">
-                <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                    {/* Logs Terminal */}
-                    <div className="w-full md:w-64 h-24 bg-black/40 border border-white/5 rounded-lg p-3 font-mono text-[10px] text-green-400 overflow-hidden flex flex-col justify-end">
+            {/* LOG PANELÄ° */}
+            <div className="bg-[#0f0f11] border-t border-white/5 p-4 z-20">
+                <div className="flex gap-4 items-center">
+                    <div className="w-full h-24 bg-black/40 border border-white/5 rounded-lg p-3 font-mono text-[10px] text-green-400 overflow-hidden">
                         <AnimatePresence>
                             {logs.map((log, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="truncate">
-                                    {log}
-                                </motion.div>
+                                <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{log}</motion.div>
                             ))}
                         </AnimatePresence>
-                        <div className="animate-pulse">_</div>
-                    </div>
-
-                    {/* Controller Buttons */}
-                    <div className="flex-1 flex justify-center gap-4">
-                        {gameData.playerActions.map((action, i) => (
-                            <button
-                                key={i}
-                                onClick={() => handleAction(action)}
-                                disabled={energy < 5 || health <= 0 || isLoading || hasError}
-                                className="group relative w-32 h-16 bg-[#1a1a1d] hover:bg-[#252529] border border-white/10 rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 active:border-purple-500/50 disabled:opacity-30 disabled:pointer-events-none"
-                            >
-                                <div className="absolute top-0 inset-x-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <span className="font-bold text-gray-200 text-sm">{action}</span>
-                                <span className="text-[9px] font-mono text-gray-500 group-hover:text-purple-400 transition-colors uppercase tracking-wider">Button {['A', 'B', 'X'][i]}</span>
-                            </button>
-                        ))}
                     </div>
                 </div>
             </div>
@@ -3396,15 +2898,15 @@ FILE: src/sdk/SimplifiedCore.ts
 
 /**
  * Game Factory SDK - Simplified Core
- * Minimal API for game development with Remix support
+ * Minimal API for game development with Mod support
  */
 
-type RemixVariables = Record<string, any>;
+type ModVariables = Record<string, any>;
 
 class GameFactorySDK {
     private static instance: GameFactorySDK;
-    private vars: RemixVariables = {};
-    private updateCallback: (newVars: RemixVariables) => void = () => { };
+    private vars: ModVariables = {};
+    private updateCallback: (newVars: ModVariables) => void = () => { };
     private score: number = 0;
     private isReady: boolean = false;
 
@@ -3420,20 +2922,20 @@ class GameFactorySDK {
     }
 
     /**
-     * 1. REGISTER REMIX VARIABLES
-     * Define what can be modded in your game
+     * 1. REGISTER MOD VARIABLES
+     * Define which variables can be modified by the platform
      */
-    public registerRemix(defaultVars: RemixVariables): void {
+    public registerMods(defaultVars: ModVariables): void {
         this.vars = defaultVars;
         this.sendMessage("REGISTER_SCHEMA", defaultVars);
-        console.log('[SDK] Remix variables registered:', defaultVars);
+        console.log('[SDK] Mod variables registered:', defaultVars);
     }
 
     /**
-     * 2. LISTEN FOR REAL-TIME UPDATES
-     * Called when platform changes a variable
+     * 2. LISTEN FOR MOD UPDATES
+     * Subscribe to variable changes from the platform
      */
-    public onRemixUpdate(callback: (newVars: RemixVariables) => void): void {
+    public onModUpdate(callback: (newVars: ModVariables) => void): void {
         this.updateCallback = callback;
     }
 
@@ -3447,7 +2949,7 @@ class GameFactorySDK {
     /**
      * 4. GET ALL VARIABLES
      */
-    public getAllVars(): RemixVariables {
+    public getAllVars(): ModVariables {
         return { ...this.vars };
     }
 
@@ -3530,11 +3032,11 @@ class GameFactorySDK {
             const { type, payload } = event.data || {};
 
             switch (type) {
-                case "UPDATE_REMIX":
-                    // Platform changed a variable
+                case "UPDATE_MODS":
+                    // Platform is updating variables
                     this.vars = { ...this.vars, ...payload };
                     this.updateCallback(this.vars);
-                    console.log('[SDK] Remix updated:', payload);
+                    console.log('[SDK] Mods updated:', payload);
                     break;
 
                 case "REQUEST_STATE":
@@ -3567,7 +3069,7 @@ export const sdk = GameFactorySDK.getInstance();
 
 // Also export class for type checking
 export { GameFactorySDK };
-export type { RemixVariables };
+export type { ModVariables };
 
 
 ========================================
