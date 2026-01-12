@@ -333,61 +333,148 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
 export async function POST(request: NextRequest) {
     let description = "";
     let previousGameData = null;
+
+    console.log('\n========================================');
+    console.log('🚀 GAME GENERATION API CALLED');
+    console.log('========================================');
+
     try {
         const json = await request.json();
         description = json.description || "";
-        previousGameData = json.previousGameData || null; // NEW: Support for iterative revisions
+        previousGameData = json.previousGameData || null;
 
+        console.log('📝 Request Details:');
+        console.log('  - Description:', description.slice(0, 100) + (description.length > 100 ? '...' : ''));
+        console.log('  - Is Revision:', !!previousGameData);
+
+        // ========== API KEY VALIDATION ==========
         const apiKey = AI_CONFIG.apiKey;
-        if (!apiKey) throw new Error('API Key configuration missing');
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        console.log('\n🔑 API Key Check:');
+        console.log('  - OPENROUTER_API_KEY exists:', !!process.env.OPENROUTER_API_KEY);
+        console.log('  - NEXT_PUBLIC_OPENROUTER_API_KEY exists:', !!process.env.NEXT_PUBLIC_OPENROUTER_API_KEY);
+        console.log('  - Final apiKey exists:', !!apiKey);
+        console.log('  - apiKey length:', apiKey ? apiKey.length : 0);
+        console.log('  - apiKey preview:', apiKey ? `${apiKey.slice(0, 10)}...${apiKey.slice(-5)}` : 'MISSING');
+
+        if (!apiKey) {
+            console.error('❌ API KEY MISSING!');
+            console.error('Please set OPENROUTER_API_KEY in .env.local');
+            throw new Error('API Key configuration missing');
+        }
+
+        // ========== OPENROUTER API REQUEST ==========
+        const apiUrl = "https://openrouter.ai/api/v1/chat/completions";
+        const requestBody = {
+            "model": "google/gemini-2.0-flash-exp-1206",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": previousGameData
+                        ? REVISION_PROMPT(previousGameData, description)
+                        : SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": previousGameData
+                        ? `Oyunu şu şekilde güncelle: ${description}`
+                        : `Kullanıcının oyun fikri: ${description}`
+                }
+            ]
+        };
+
+        console.log('\n📡 OpenRouter Request:');
+        console.log('  - URL:', apiUrl);
+        console.log('  - Model:', requestBody.model);
+        console.log('  - System Prompt Length:', requestBody.messages[0].content.length);
+        console.log('  - User Prompt:', requestBody.messages[1].content.slice(0, 100));
+
+        const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "http://localhost:3000",
-                "X-Title": "Game Factory",
+                "HTTP-Referer": "https://game-factory.mantle.xyz",
+                "X-Title": "Game Factory - AI Game Generator",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                "model": "google/gemini-2.0-flash-001",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": previousGameData
-                            ? REVISION_PROMPT(previousGameData, description)
-                            : SYSTEM_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": previousGameData
-                            ? `Oyunu şu şekilde güncelle: ${description}`
-                            : `Kullanıcının oyun fikri: ${description}`
-                    }
-                ]
-            })
+            body: JSON.stringify(requestBody)
         });
 
+        console.log('\n📥 OpenRouter Response:');
+        console.log('  - Status:', response.status, response.statusText);
+        console.log('  - OK:', response.ok);
+
+        // ========== ERROR HANDLING ==========
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`OpenRouter API Error: ${response.status} - ${errorText}`);
+            console.error('\n❌ OpenRouter API Error:');
+            console.error('  - Status:', response.status);
+            console.error('  - Status Text:', response.statusText);
+
+            let errorBody;
+            try {
+                errorBody = await response.json();
+                console.error('  - Error Body (JSON):', JSON.stringify(errorBody, null, 2));
+            } catch {
+                errorBody = await response.text();
+                console.error('  - Error Body (Text):', errorBody);
+            }
+
+            // Common error messages
+            if (response.status === 401) {
+                console.error('\n🔐 AUTHENTICATION FAILED!');
+                console.error('  - Your API key is invalid or expired');
+                console.error('  - Check: https://openrouter.ai/keys');
+            } else if (response.status === 402) {
+                console.error('\n💳 INSUFFICIENT CREDITS!');
+                console.error('  - Your OpenRouter account has no credits');
+                console.error('  - Add credits: https://openrouter.ai/credits');
+            } else if (response.status === 429) {
+                console.error('\n⏱️ RATE LIMIT EXCEEDED!');
+                console.error('  - Too many requests');
+                console.error('  - Wait a moment and try again');
+            }
+
+            throw new Error(`OpenRouter API Error: ${response.status} - ${JSON.stringify(errorBody)}`);
         }
 
+        // ========== PARSE RESPONSE ==========
         const completion = await response.json();
+        console.log('\n✅ Response Received:');
+        console.log('  - Has choices:', !!completion.choices);
+        console.log('  - Choices length:', completion.choices?.length || 0);
+
         const text = completion.choices[0]?.message?.content || "";
-        if (!text) throw new Error("Empty response from AI");
+        if (!text) {
+            console.error('❌ Empty response from AI');
+            throw new Error("Empty response from AI");
+        }
+
+        console.log('  - Content length:', text.length);
+        console.log('  - Content preview:', text.slice(0, 200));
 
         let gameData;
         try {
             const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             gameData = JSON.parse(cleanedText);
-        } catch {
+            console.log('\n✅ JSON Parsed Successfully');
+            console.log('  - Game Name:', gameData.gameName);
+            console.log('  - Has modSchema:', !!gameData.modSchema);
+            console.log('  - modSchema items:', gameData.modSchema?.length || 0);
+        } catch (parseError) {
+            console.error('\n❌ JSON Parse Error:', parseError);
+            console.error('  - Raw text:', text.slice(0, 500));
             return NextResponse.json({ error: 'AI yanıtı JSON formatında değil', raw: text }, { status: 500 });
         }
 
+        console.log('\n🎉 SUCCESS - Returning AI-generated game');
+        console.log('========================================\n');
         return NextResponse.json({ success: true, gameData, isMock: false });
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('\n💥 FATAL ERROR - Falling back to Mock Mode');
+        console.error('  - Error Type:', error instanceof Error ? error.constructor.name : typeof error);
+        console.error('  - Error Message:', error instanceof Error ? error.message : String(error));
+        console.error('  - Stack:', error instanceof Error ? error.stack : 'N/A');
+        console.log('========================================\n');
 
         let genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong' = 'Shooter';
         const desc = description.toLowerCase();
@@ -401,7 +488,8 @@ export async function POST(request: NextRequest) {
             success: true,
             gameData: mockGame,
             isMock: true,
-            note: "Using Dynamic Mock due to API Error"
+            error: error instanceof Error ? error.message : String(error),
+            note: "Using Dynamic Mock due to API Error - Check server console for details"
         });
     }
 }
