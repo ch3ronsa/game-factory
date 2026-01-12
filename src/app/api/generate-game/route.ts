@@ -14,10 +14,48 @@ JSON Formatı:
   "visualStyle": "Görsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
   "startingScene": "Oyunun başlangıç sahnesinin atmosferik betimlemesi",
   "playerActions": ["Saldır", "Kaç", "Keşfet" gibi oyunun başlangıcında yapılabilecek 3 eylem],
-  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU SDK ENTEGRASYONU: Oyun kodunun EN BAŞINDA (setup fonksiyonunun içinde) MUTLAKA şu satırları ekle: SDK.registerMods({ playerSpeed: 5, gravity: 0.8, jumpPower: 10 }); ve SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; jumpPower = vars.jumpPower; }); Ardından SDK.gameReady(); ve SDK.gameStart(); çağır. Oyun bittiğinde SDK.gameEnd(score); kullan. Skor güncellemek için SDK.submitScore(score) veya SDK.addScore(10) kullan. ÖRNEK KOD YAPISI: let playerSpeed = 5; let gravity = 0.8; let score = 0; function setup() { createCanvas(windowWidth, windowHeight); SDK.registerMods({ playerSpeed: 5, gravity: 0.8 }); SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; }); SDK.gameReady(); SDK.gameStart(); } function draw() { background(0); /* oyun mantığı */ SDK.submitScore(score); } function keyPressed() { if (key === 'q') SDK.gameEnd(score); } - Sadece saf JavaScript kodu yaz, HTML tagları OLMASIN. Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap."
+  "modSchema": [
+    {
+      "key": "playerSpeed",
+      "type": "range",
+      "label": "Player Speed",
+      "defaultValue": 5,
+      "min": 1,
+      "max": 20,
+      "step": 0.5
+    },
+    {
+      "key": "gravity",
+      "type": "range",
+      "label": "Gravity",
+      "defaultValue": 0.6,
+      "min": 0,
+      "max": 2,
+      "step": 0.1
+    },
+    {
+      "key": "themeColor",
+      "type": "color",
+      "label": "Theme Color",
+      "defaultValue": "#00ccff"
+    },
+    {
+      "key": "enableParticles",
+      "type": "boolean",
+      "label": "Enable Particles",
+      "defaultValue": true
+    }
+  ],
+  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU: 1) modSchema'daki TÜM değişkenleri GLOBAL olarak tanımla (let playerSpeed = 5; let gravity = 0.6; vb.). 2) setup() içinde SDK.registerMods() çağır ve modSchema'daki AYNI key'leri kullan. 3) SDK.onModUpdate() ile değişkenleri güncelle. 4) SDK.gameReady() ve SDK.gameStart() çağır. ÖRNEK: let playerSpeed = 5; let gravity = 0.6; let themeColor; function setup() { createCanvas(windowWidth, windowHeight); themeColor = color('#00ccff'); SDK.registerMods({ playerSpeed: 5, gravity: 0.6, themeColor: '#00ccff' }); SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; themeColor = color(vars.themeColor); }); SDK.gameReady(); SDK.gameStart(); } - Sadece JavaScript kodu, HTML yok. Canvas: createCanvas(windowWidth, windowHeight)."
 }
 
-KRİTİK: gameCode içinde SDK.registerMods() çağrısı ZORUNLUDUR! Bu olmadan oyun çalışmaz. SADECE geçerli JSON döndür, başka hiçbir açıklama veya metin ekleme.`;
+KRİTİK KURALLAR:
+1. modSchema'da tanımlanan HER değişken gameCode'da GLOBAL olarak tanımlanmalı
+2. SDK.registerMods() çağrısı modSchema ile AYNI key'leri kullanmalı
+3. type: "range" için min, max, step ZORUNLU
+4. type: "color" için sadece defaultValue
+5. type: "boolean" için sadece defaultValue
+6. SADECE geçerli JSON döndür, başka açıklama ekleme.`;
 
 // --- DYNAMIC MOCK GENERATOR (SDK UYUMLU VERSİYON) ---
 function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong', description: string) {
