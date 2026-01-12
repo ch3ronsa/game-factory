@@ -248,15 +248,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     return (
         <div className={`flex flex-col h-full w-full bg-[#050505] ${!isInline ? 'relative' : ''}`}>
 
-            {/* DEBUG PANEL */}
-            <div className="absolute top-4 right-4 z-50 bg-red-900/90 border-2 border-red-500 rounded-lg p-3 text-white text-xs font-mono max-w-xs">
-                <div className="font-bold text-yellow-300 mb-2">🔍 DEBUG MODE ACTIVE</div>
-                <div className="text-[10px] space-y-1">
-                    <div>✅ Mod Vars: {Object.keys(modVars).length}</div>
-                    <div>📊 Score: {score}</div>
-                    <div className="text-yellow-200 mt-2">Console'u açın! (F12)</div>
-                </div>
-            </div>
+            {/* DEBUG PANEL - Hidden in production, visible in dev console only */}
 
 
             {/* OYUN ALANI */}
@@ -285,10 +277,39 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                             />
                         )}
 
-                        <div className="absolute top-4 right-6 bg-black/60 backdrop-blur border border-white/10 px-4 py-2 rounded-lg z-10">
-                            <div className="text-xs text-gray-400 font-mono uppercase">Score</div>
-                            <div className="text-2xl font-bold text-white font-mono">{score}</div>
+                        {/* Controls Hint Overlay - Top Left */}
+                        <div className="absolute top-4 left-4 bg-black/60 backdrop-blur border border-white/10 px-3 py-2 rounded-lg z-10">
+                            <div className="text-[10px] text-gray-400 font-mono uppercase mb-1">🎮 Controls</div>
+                            <div className="text-xs text-white/80 space-y-0.5">
+                                {gameData.playerActions?.slice(0, 3).map((action, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <span className="text-purple-400">•</span>
+                                        <span>{action}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
+
+                        {/* Score Display - Top Right */}
+                        {isInline && (
+                            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur border border-white/10 px-3 py-2 rounded-lg z-10">
+                                <div className="text-[10px] text-gray-400 font-mono uppercase">Score</div>
+                                <div className="text-xl font-bold text-white font-mono">{score}</div>
+                            </div>
+                        )}
+
+                        {/* Restart Button - Bottom Right */}
+                        <button
+                            onClick={() => {
+                                if (iframeRef.current) {
+                                    iframeRef.current.src = iframeRef.current.src; // Reload iframe
+                                    setScore(0);
+                                }
+                            }}
+                            className="absolute bottom-4 right-4 z-20 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 rounded-lg text-white text-sm font-medium transition-all"
+                        >
+                            🔄 Restart
+                        </button>
 
                         {!isInline && (
                             <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-lg">
@@ -299,18 +320,20 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                 </div>
             </div>
 
-            {/* LOG PANELİ */}
-            <div className="bg-[#0f0f11] border-t border-white/5 p-4 z-20">
-                <div className="flex gap-4 items-center">
-                    <div className="w-full h-24 bg-black/40 border border-white/5 rounded-lg p-3 font-mono text-[10px] text-green-400 overflow-hidden">
-                        <AnimatePresence>
-                            {logs.map((log, i) => (
-                                <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{log}</motion.div>
-                            ))}
-                        </AnimatePresence>
+            {/* LOG PANEL - Hidden in inline mode */}
+            {!isInline && (
+                <div className="bg-[#0f0f11] border-t border-white/5 p-4 z-20">
+                    <div className="flex gap-4 items-center">
+                        <div className="w-full h-24 bg-black/40 border border-white/5 rounded-lg p-3 font-mono text-[10px] text-green-400 overflow-hidden">
+                            <AnimatePresence>
+                                {logs.map((log, i) => (
+                                    <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{log}</motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
