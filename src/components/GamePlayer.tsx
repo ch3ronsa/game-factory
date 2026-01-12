@@ -110,6 +110,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
         canvas { display: block; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/bmoren/p5.collide2D/p5.collide2d.min.js"></script>
 </head>
 <body>
     <script>
