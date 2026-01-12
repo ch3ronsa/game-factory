@@ -18,6 +18,12 @@ interface GameData {
     gameName: string;
     genre: string;
     mechanics: string[];
+    levelStructure: string;
+    mantleAssets: string[];
+    difficulty: number;
+    visualStyle: string;
+    startingScene: string;
+    playerActions: string[];
     modSchema?: ModSchemaItem[];
     gameCode: string;
 }
