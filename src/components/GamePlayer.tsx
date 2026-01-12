@@ -214,10 +214,18 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                 console.log('%c🎧 SDK: Message Listener Kuruldu (iframe içinde)', 'color: #0ff;');
                 window.addEventListener("message", (event) => {
                     const { type, payload } = event.data || {};
+                    console.log('%c📨 SDK: Mesaj alındı', 'color: #ff0;', 'Type:', type, 'Payload:', payload);
                     // REACT SENDS UPDATE_MODS
                     if (type === "UPDATE_MODS") {
+                        console.log('%c🔧 UPDATE_MODS alındı!', 'background: #0f0; color: #000; padding: 4px;', payload);
                         this.vars = { ...this.vars, ...payload };
-                        this.updateCallback(this.vars);
+                        console.log('%c📊 Yeni vars:', 'color: #0ff;', this.vars);
+                        if (this.updateCallback) {
+                            console.log('%c✅ updateCallback çağrılıyor...', 'color: #0f0;');
+                            this.updateCallback(this.vars);
+                        } else {
+                            console.warn('%c⚠️ updateCallback tanımlı değil!', 'color: #f00;');
+                        }
                     }
                 });
             }
