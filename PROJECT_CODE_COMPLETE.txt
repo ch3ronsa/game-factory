@@ -1,9 +1,12 @@
-﻿# GAME FACTORY - COMPLETE PROJECT CODE (Updated: 2026-01-12 13:43)
+﻿# GAME FACTORY - COMPLETE PROJECT CODE
+# Updated: 2026-01-12 14:52
+# Latest Features: Ohara.ai Style Live Studio, Iterative Revision, modSchema
 
 
 
 ========================================
 FILE: package.json
+LINES: 33
 ========================================
 
 {
@@ -19,7 +22,7 @@ FILE: package.json
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@tanstack/react-query": "^5.90.16",
-    "framer-motion": "^12.25.0",
+    "framer-motion": "^12.26.1",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -42,6 +45,7 @@ FILE: package.json
 
 ========================================
 FILE: tsconfig.json
+LINES: 35
 ========================================
 
 {
@@ -82,6 +86,7 @@ FILE: tsconfig.json
 
 ========================================
 FILE: .env.example
+LINES: 7
 ========================================
 
 # Environment Variables
@@ -94,6 +99,7 @@ NEXT_PUBLIC_OPENROUTER_API_KEY=your_api_key_here
 
 ========================================
 FILE: .gitignore
+LINES: 43
 ========================================
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
@@ -142,6 +148,7 @@ next-env.d.ts
 
 ========================================
 FILE: README.md
+LINES: 37
 ========================================
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
@@ -184,6 +191,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ========================================
 FILE: SDK_SIMPLE.md
+LINES: 384
 ========================================
 
 # Game Factory SDK - Simplified API Guide
@@ -572,7 +580,790 @@ The new API is much simpler and easier to use!
 
 
 ========================================
+FILE: REMIX_GUIDE.md
+LINES: 398
+========================================
+
+# Remix.gg Style Modding - Usage Examples
+
+## ğŸ¨ Schema Definition (Moddable Parameters)
+
+### Basic Example
+
+```javascript
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // Initialize SDK
+    await SDK.init({ debug: true });
+    
+    // Define what can be modded
+    SDK.schema.defineSchema([
+        {
+            key: 'playerSpeed',
+            type: 'range',
+            label: 'Player Speed',
+            defaultValue: 5,
+            min: 1,
+            max: 10,
+            step: 0.5,
+            description: 'How fast the player moves'
+        },
+        {
+            key: 'gravity',
+            type: 'number',
+            label: 'Gravity',
+            defaultValue: 0.5,
+            min: 0,
+            max: 2
+        },
+        {
+            key: 'backgroundColor',
+            type: 'color',
+            label: 'Background Color',
+            defaultValue: '#000000'
+        },
+        {
+            key: 'enableParticles',
+            type: 'boolean',
+            label: 'Enable Particles',
+            defaultValue: true
+        }
+    ]);
+}
+```
+
+### Using Schema Values in Game
+
+```javascript
+let playerSpeed;
+let gravity;
+let bgColor;
+
+function setup() {
+    // ... SDK init and schema definition ...
+    
+    // Get initial values
+    playerSpeed = SDK.schema.getValue('playerSpeed');
+    gravity = SDK.schema.getValue('gravity');
+    bgColor = SDK.schema.getValue('backgroundColor');
+    
+    // Listen for real-time updates
+    SDK.schema.onUpdate((key, value) => {
+        console.log(`${key} changed to ${value}`);
+        
+        // Update game variables in real-time
+        if (key === 'playerSpeed') playerSpeed = value;
+        if (key === 'gravity') gravity = value;
+        if (key === 'backgroundColor') bgColor = value;
+    });
+}
+
+function draw() {
+    // Use the moddable values
+    background(bgColor);
+    
+    // Player movement with moddable speed
+    if (keyIsDown(LEFT_ARROW)) {
+        playerX -= playerSpeed;
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
+        playerX += playerSpeed;
+    }
+    
+    // Apply moddable gravity
+    playerVelocityY += gravity;
+}
+```
+
+## ğŸ–¼ï¸ Asset Mapping (Sprite Replacement)
+
+### Basic Asset Mapping
+
+```javascript
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    await SDK.init();
+    
+    // Map original assets to remix URLs
+    SDK.assets.mapAssets([
+        {
+            originalUrl: '/sprites/player.png',
+            remixUrl: 'https://example.com/custom-player.png',
+            type: 'sprite'
+        },
+        {
+            originalUrl: '/sprites/enemy.png',
+            remixUrl: 'https://example.com/custom-enemy.png',
+            type: 'sprite'
+        },
+        {
+            originalUrl: '/sounds/jump.mp3',
+            remixUrl: 'https://example.com/custom-jump.mp3',
+            type: 'audio'
+        }
+    ]);
+}
+```
+
+### Loading Remixed Images
+
+```javascript
+let playerSprite;
+let enemySprite;
+
+async function preload() {
+    // SDK automatically uses remixed URLs if available
+    playerSprite = await SDK.assets.loadImage('/sprites/player.png');
+    enemySprite = await SDK.assets.loadImage('/sprites/enemy.png');
+}
+
+function draw() {
+    background(0);
+    
+    // Draw with potentially remixed sprites
+    image(playerSprite, playerX, playerY);
+    image(enemySprite, enemyX, enemyY);
+}
+```
+
+### With p5.js loadImage Integration
+
+```javascript
+let playerImg;
+
+function preload() {
+    // Get the remixed URL
+    const playerUrl = SDK.assets.getAssetUrl('/sprites/player.png');
+    
+    // Use with p5.js
+    playerImg = loadImage(playerUrl);
+}
+```
+
+## ğŸ”„ Real-time Updates from Parent Window
+
+### Parent Window Code (Remix UI)
+
+```javascript
+// Send variable update to game iframe
+const gameIframe = document.getElementById('game-iframe');
+
+gameIframe.contentWindow.postMessage({
+    type: 'UPDATE_VARIABLE',
+    data: {
+        key: 'playerSpeed',
+        value: 8
+    }
+}, '*');
+
+// Bulk update multiple variables
+gameIframe.contentWindow.postMessage({
+    type: 'BULK_UPDATE',
+    data: {
+        playerSpeed: 8,
+        gravity: 1.2,
+        backgroundColor: '#ff0000'
+    }
+}, '*');
+
+// Update assets
+gameIframe.contentWindow.postMessage({
+    type: 'UPDATE_ASSETS',
+    data: {
+        mappings: [
+            {
+                originalUrl: '/sprites/player.png',
+                remixUrl: 'https://new-url.com/player.png',
+                type: 'sprite'
+            }
+        ]
+    }
+}, '*');
+```
+
+### Game Code (Receives Updates)
+
+```javascript
+// Updates are automatically handled by SDK
+// Just subscribe to changes:
+
+SDK.schema.onUpdate((key, value) => {
+    console.log(`Remix update: ${key} = ${value}`);
+    
+    // Apply changes immediately
+    switch(key) {
+        case 'playerSpeed':
+            player.speed = value;
+            break;
+        case 'gravity':
+            world.gravity = value;
+            break;
+        case 'backgroundColor':
+            bgColor = color(value);
+            break;
+    }
+});
+```
+
+## ğŸ® Complete Remix-Ready Game Example
+
+```javascript
+// Game variables
+let player = {
+    x: 200,
+    y: 200,
+    speed: 5,
+    size: 30,
+    sprite: null
+};
+
+let world = {
+    gravity: 0.5,
+    bgColor: '#000000'
+};
+
+let particles = [];
+let particlesEnabled = true;
+
+async function preload() {
+    // Load sprites (will use remixed versions if available)
+    player.sprite = await SDK.assets.loadImage('/sprites/player.png');
+}
+
+async function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // Initialize SDK
+    await SDK.init({ gameId: 'my-remix-game', debug: true });
+    
+    // Define moddable schema
+    SDK.schema.defineSchema([
+        { key: 'playerSpeed', type: 'range', label: 'Speed', defaultValue: 5, min: 1, max: 15 },
+        { key: 'playerSize', type: 'range', label: 'Size', defaultValue: 30, min: 10, max: 100 },
+        { key: 'gravity', type: 'number', label: 'Gravity', defaultValue: 0.5, min: 0, max: 3 },
+        { key: 'bgColor', type: 'color', label: 'Background', defaultValue: '#000000' },
+        { key: 'particlesEnabled', type: 'boolean', label: 'Particles', defaultValue: true }
+    ]);
+    
+    // Map assets
+    SDK.assets.mapAssets([
+        { originalUrl: '/sprites/player.png', remixUrl: '/sprites/player.png', type: 'sprite' }
+    ]);
+    
+    // Listen for real-time updates
+    SDK.schema.onUpdate((key, value) => {
+        if (key === 'playerSpeed') player.speed = value;
+        if (key === 'playerSize') player.size = value;
+        if (key === 'gravity') world.gravity = value;
+        if (key === 'bgColor') world.bgColor = value;
+        if (key === 'particlesEnabled') particlesEnabled = value;
+    });
+    
+    // Listen for asset updates
+    SDK.assets.onAssetLoad((url, success) => {
+        console.log(`Asset ${url} loaded: ${success}`);
+    });
+    
+    // Start game
+    await SDK.lifecycle.start();
+}
+
+function draw() {
+    // Use moddable background color
+    background(world.bgColor);
+    
+    // Player movement with moddable speed
+    if (keyIsDown(LEFT_ARROW)) player.x -= player.speed;
+    if (keyIsDown(RIGHT_ARROW)) player.x += player.speed;
+    if (keyIsDown(UP_ARROW)) player.y -= player.speed;
+    if (keyIsDown(DOWN_ARROW)) player.y += player.speed;
+    
+    // Draw player with moddable size and potentially remixed sprite
+    if (player.sprite) {
+        image(player.sprite, player.x, player.y, player.size, player.size);
+    } else {
+        fill(255);
+        rect(player.x, player.y, player.size, player.size);
+    }
+    
+    // Particles (if enabled)
+    if (particlesEnabled && frameCount % 5 === 0) {
+        particles.push({ x: player.x, y: player.y, life: 255 });
+    }
+    
+    // Update and draw particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.y += world.gravity;
+        p.life -= 5;
+        
+        fill(255, p.life);
+        ellipse(p.x, p.y, 5);
+        
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+async function keyPressed() {
+    if (key === 'q') {
+        await SDK.lifecycle.finish(score);
+    }
+}
+```
+
+## ğŸ“¡ Message Protocol
+
+### Messages Sent by Game (to Parent)
+
+```typescript
+// Schema defined
+{
+    type: 'SCHEMA_DEFINED',
+    data: {
+        schema: { properties: [...] },
+        currentValues: { playerSpeed: 5, gravity: 0.5 }
+    }
+}
+
+// Assets manifest
+{
+    type: 'ASSETS_MANIFEST',
+    data: {
+        assets: [
+            { originalUrl: '...', remixUrl: '...', type: 'sprite' }
+        ]
+    }
+}
+```
+
+### Messages Received by Game (from Parent)
+
+```typescript
+// Update single variable
+{
+    type: 'UPDATE_VARIABLE',
+    data: { key: 'playerSpeed', value: 8 }
+}
+
+// Bulk update
+{
+    type: 'BULK_UPDATE',
+    data: { playerSpeed: 8, gravity: 1.2 }
+}
+
+// Update assets
+{
+    type: 'UPDATE_ASSETS',
+    data: {
+        mappings: [...]
+    }
+}
+
+// Request current schema
+{
+    type: 'REQUEST_SCHEMA'
+}
+```
+
+## ğŸ¯ Best Practices
+
+1. **Always define schema early** - Call `defineSchema()` in `setup()`
+2. **Use onUpdate for reactivity** - Subscribe to changes instead of polling
+3. **Validate values** - SDK automatically validates against schema
+4. **Preload assets** - Use `SDK.assets.loadImage()` in `preload()`
+5. **Test with mock data** - Send test messages from console during development
+
+```javascript
+// Test in browser console:
+window.postMessage({
+    type: 'UPDATE_VARIABLE',
+    data: { key: 'playerSpeed', value: 10 }
+}, '*');
+```
+
+
+========================================
+FILE: DEBUG_LOGS.md
+LINES: 174
+========================================
+
+# ğŸ” DEBUG MODE - Beklenen Log SÄ±ralamasÄ±
+
+## BaÅŸarÄ±lÄ± Bir SDK Ä°letiÅŸiminde GÃ¶rmeniz Gereken Loglar:
+
+### 1ï¸âƒ£ Ä°lk YÃ¼kleme (Iframe OluÅŸturulurken)
+
+```
+ğŸ§ DEBUG: React Event Listener Kuruldu (window.addEventListener)
+  â†“
+ğŸ¬ Iframe YÃ¼klendi!
+```
+
+### 2ï¸âƒ£ SDK Enjeksiyonu (Iframe Ä°Ã§inde)
+
+```
+ğŸš€ DEBUG 1: ENJEKSÄ°YON ANI - SDK Class TanÄ±mlanÄ±yor...
+  â†“
+âœ… DEBUG 1: SDK Instance OluÅŸturuldu!
+  â†“
+ğŸ§ SDK: Message Listener Kuruldu (iframe iÃ§inde)
+  â†“
+ğŸ‰ DEBUG 1 FINAL: window.SDK AtandÄ±!
+  âœ… registerRemix fonksiyonu mevcut mu? true
+```
+
+### 3ï¸âƒ£ Oyun Kodu YÃ¼kleniyor
+
+```
+ğŸ® Oyun Kodu YÃ¼kleniyor...
+  â†“
+âœ… Oyun Kodu YÃ¼klendi
+```
+
+### 4ï¸âƒ£ Oyun setup() Fonksiyonu Ã‡alÄ±ÅŸÄ±yor
+
+**EÄER OYUN `SDK.registerRemix()` Ã‡AÄIRIYORSA:**
+
+```
+ğŸ¯ DEBUG 2: TETÄ°KLEME ANI - registerRemix() Ã‡AÄRILDI!
+  Gelen DeÄŸiÅŸkenler: {playerSpeed: 5, gravity: 0.8, ...}
+  â†“
+ğŸ“® DEBUG 3: POSTACI ANI - postMessage() Ã‡ALIÅIYOR!
+  ğŸ“¨ Type: REGISTER_SCHEMA
+  ğŸ“¦ Payload: {playerSpeed: 5, gravity: 0.8, ...}
+  ğŸ¯ Target: window.parent
+  â†“
+âœ… postMessage BaÅŸarÄ±lÄ±! Mesaj GÃ¶nderildi.
+  â†“
+âœ… registerRemix TamamlandÄ± - DeÄŸiÅŸkenler Kaydedildi
+```
+
+### 5ï¸âƒ£ React TarafÄ±nda Mesaj YakalanÄ±yor
+
+```
+ğŸ¯ DEBUG 4: KARÅILAMA ANI - React Listener Mesaj YakaladÄ±!
+  ğŸ“¨ Type: REGISTER_SCHEMA
+  ğŸ“¦ Payload: {playerSpeed: 5, gravity: 0.8, ...}
+  â†“
+âœ… REGISTER_SCHEMA AlÄ±ndÄ±! Remix UI OluÅŸturuluyor...
+```
+
+### 6ï¸âƒ£ Oyun Lifecycle Ã‡aÄŸrÄ±larÄ± (Opsiyonel)
+
+```
+ğŸ® gameReady() Ã§aÄŸrÄ±ldÄ±
+  â†“
+ğŸ“® DEBUG 3: POSTACI ANI - postMessage() Ã‡ALIÅIYOR!
+  ğŸ“¨ Type: GAME_READY
+  â†“
+ğŸ¯ DEBUG 4: KARÅILAMA ANI - React Listener Mesaj YakaladÄ±!
+  ğŸ“¨ Type: GAME_READY
+```
+
+```
+â–¶ï¸ gameStart() Ã§aÄŸrÄ±ldÄ±
+  â†“
+ğŸ“® DEBUG 3: POSTACI ANI - postMessage() Ã‡ALIÅIYOR!
+  ğŸ“¨ Type: GAME_START
+  â†“
+ğŸ¯ DEBUG 4: KARÅILAMA ANI - React Listener Mesaj YakaladÄ±!
+  ğŸ“¨ Type: GAME_START
+```
+
+---
+
+## âŒ Sorun Tespiti - LoglarÄ±n Nerede KesildiÄŸine BakÄ±n:
+
+### Senaryo A: SDK HiÃ§ YÃ¼klenmedi
+**GÃ¶rÃ¼len:** Sadece React listener kuruldu, iframe yÃ¼klendi ama SDK loglarÄ± yok
+**Sorun:** Iframe srcDoc hatalÄ± veya script Ã§alÄ±ÅŸmadÄ±
+**Ã‡Ã¶zÃ¼m:** TarayÄ±cÄ± console'da iframe iÃ§indeki hatalarÄ± kontrol edin
+
+### Senaryo B: SDK YÃ¼klendi Ama registerRemix Ã‡aÄŸrÄ±lmadÄ±
+**GÃ¶rÃ¼len:** 
+```
+âœ… DEBUG 1: SDK Instance OluÅŸturuldu!
+ğŸ® Oyun Kodu YÃ¼kleniyor...
+âœ… Oyun Kodu YÃ¼klendi
+```
+**GÃ¶rÃ¼lmeyen:** DEBUG 2 (TETÄ°KLEME ANI)
+**Sorun:** Oyun kodu `SDK.registerRemix()` Ã§aÄŸÄ±rmÄ±yor
+**Ã‡Ã¶zÃ¼m:** AI prompt'u gÃ¼Ã§lendirin veya oyun koduna manuel ekleyin
+
+### Senaryo C: registerRemix Ã‡aÄŸrÄ±ldÄ± Ama postMessage Ã‡alÄ±ÅŸmadÄ±
+**GÃ¶rÃ¼len:** DEBUG 2 var ama DEBUG 3 yok
+**Sorun:** `sendMessage` fonksiyonu Ã§alÄ±ÅŸmadÄ±
+**Ã‡Ã¶zÃ¼m:** SDK kodunda syntax hatasÄ± olabilir
+
+### Senaryo D: postMessage Ã‡alÄ±ÅŸtÄ± Ama React YakalamadÄ±
+**GÃ¶rÃ¼len:** DEBUG 3 var ama DEBUG 4 yok
+**Sorun:** 
+- React event listener kurulmadÄ±
+- Origin/security sorunu
+- Message format hatalÄ±
+**Ã‡Ã¶zÃ¼m:** React component'in mount olduÄŸundan emin olun
+
+### Senaryo E: React YakaladÄ± Ama UI GÃ¶rÃ¼nmÃ¼yor
+**GÃ¶rÃ¼len:** DEBUG 4 var, REGISTER_SCHEMA alÄ±ndÄ±
+**GÃ¶rÃ¼lmeyen:** Ekranda Remix UI (sliderlar)
+**Sorun:** 
+- `setRemixVars` Ã§alÄ±ÅŸmadÄ±
+- CSS/z-index sorunu
+- Payload formatÄ± yanlÄ±ÅŸ
+**Ã‡Ã¶zÃ¼m:** React DevTools ile state'i kontrol edin
+
+---
+
+## ğŸ§ª Manuel Test Komutu
+
+Console'da ÅŸunu Ã§alÄ±ÅŸtÄ±rarak manuel mesaj gÃ¶nderebilirsiniz:
+
+```javascript
+// Parent window'dan iframe'e mesaj gÃ¶nder
+const iframe = document.querySelector('iframe');
+iframe.contentWindow.postMessage({
+    type: 'UPDATE_REMIX',
+    payload: { playerSpeed: 10 }
+}, '*');
+```
+
+```javascript
+// Iframe iÃ§inden parent'a mesaj gÃ¶nder (iframe console'unda)
+window.parent.postMessage({
+    type: 'REGISTER_SCHEMA',
+    payload: { testVar: 123 }
+}, '*');
+```
+
+---
+
+## ğŸ“Š Renk KodlarÄ±
+
+- ğŸ”´ **KÄ±rmÄ±zÄ± (DEBUG 1)**: SDK Enjeksiyonu
+- ğŸŸ¡ **SarÄ± (DEBUG 2)**: registerRemix Tetikleme
+- ğŸŸ£ **Mor (DEBUG 3)**: postMessage GÃ¶nderme
+- ğŸŸ¢ **YeÅŸil (DEBUG 4)**: React Mesaj Yakalama
+- ğŸ”µ **Mavi**: Genel bilgi loglarÄ±
+- âš« **Siyah/Beyaz**: Oyun kodu loglarÄ±
+
+---
+
+## âœ… BaÅŸarÄ± GÃ¶stergesi
+
+EÄŸer **tÃ¼m 4 DEBUG noktasÄ±nÄ±** gÃ¶rÃ¼yorsanÄ±z ve Remix UI ekranda Ã§Ä±kmÄ±yorsa:
+1. React DevTools'u aÃ§Ä±n
+2. `GamePlayer` component'ini bulun
+3. `remixVars` state'ine bakÄ±n
+4. DeÄŸer varsa ama UI yoksa â†’ CSS/render sorunu
+5. DeÄŸer yoksa â†’ `setRemixVars` Ã§alÄ±ÅŸmamÄ±ÅŸ
+
+---
+
+**Not:** SimÃ¼lasyon modunda (mock oyunlarda) `registerRemix` Ã§aÄŸrÄ±lmaz Ã§Ã¼nkÃ¼ mock generator'da bu kod yok. GerÃ§ek AI Ã¼retimi test edin!
+
+
+========================================
+FILE: PROJECT_SUMMARY.md
+LINES: 192
+========================================
+
+# GAME FACTORY - COMPLETE PROJECT CODE SUMMARY
+
+## ğŸ“Š Project Statistics
+- **Total Files**: 33 key files
+- **Total Lines**: 4,748 lines
+- **Total Size**: ~175 KB
+- **Language**: TypeScript, React, Next.js
+
+## ğŸ“ File Structure
+
+### Configuration Files (4 files)
+1. package.json - Dependencies and scripts
+2. tsconfig.json - TypeScript configuration
+3. .env.example - Environment variables template
+4. .gitignore - Git ignore rules
+
+### Documentation Files (3 files)
+5. README.md - Project readme
+6. SDK_SIMPLE.md - Simplified SDK guide
+7. REMIX_GUIDE.md - Remix.gg style modding guide
+8. SDK_USAGE.md - Full SDK usage documentation
+
+### App Pages (5 files)
+9. src/app/layout.tsx - Root layout
+10. src/app/page.tsx - Homepage
+11. src/app/globals.css - Global styles
+12. src/app/create/page.tsx - Game creation page
+13. src/app/profil/page.tsx - Profile page
+14. src/app/sdk-test/page.tsx - SDK test page
+
+### API Routes (1 file)
+15. src/app/api/generate-game/route.ts - AI game generation API
+
+### Components (6 files)
+16. src/components/GamePlayer.tsx - Game player with iframe
+17. src/components/GameDescriptionForm.tsx - Game creation form
+18. src/components/ConnectButton.tsx - Wallet connect button
+19. src/components/ProfileButton.tsx - Profile button
+20. src/components/MethBalance.tsx - mETH balance display
+21. src/components/Providers.tsx - App providers wrapper
+
+### Providers (1 file)
+22. src/providers/Web3Provider.tsx - Web3 provider
+
+### Configuration (2 files)
+23. src/config/wagmi.ts - Wagmi/Web3 configuration
+24. src/config/ai.ts - AI API configuration
+
+### SDK Core (3 files)
+25. src/sdk/index.ts - SDK main export
+26. src/sdk/SimplifiedCore.ts - Simplified SDK core
+27. src/sdk/core/GameFactorySDK.ts - Full SDK core
+28. src/sdk/core/types.ts - TypeScript types
+
+### SDK Modules (4 files)
+29. src/sdk/modules/ScoreModule.ts - Score management
+30. src/sdk/modules/LifecycleModule.ts - Game lifecycle
+31. src/sdk/modules/SchemaModule.ts - Remix schema
+32. src/sdk/modules/AssetsModule.ts - Asset management
+
+### SDK Shims (1 file)
+33. src/sdk/shims/farcade-shim.ts - Farcade compatibility
+
+## ğŸ® Key Features
+
+### 1. AI Game Generation
+- OpenRouter API integration
+- Gemini 2.0 Flash model
+- Dynamic mock generator fallback
+- p5.js code generation
+
+### 2. Game Factory SDK
+- **Simplified API**: 8 core methods
+  - registerRemix()
+  - onRemixUpdate()
+  - getVar() / getAllVars()
+  - submitScore() / addScore() / setScore() / getScore()
+  - gameReady() / gameStart() / gameEnd()
+
+- **Modular Architecture** (optional):
+  - ScoreModule
+  - LifecycleModule
+  - SchemaModule
+  - AssetsModule
+
+### 3. Remix.gg Style Modding
+- Real-time variable updates
+- Asset URL mapping
+- Parent-child window communication
+- Schema definition for moddable parameters
+
+### 4. Web3 Integration
+- Wagmi v3
+- Mantle Network support
+- mETH token integration
+- Wallet connection
+
+### 5. UI/UX
+- Cyberpunk/Game Factory theme
+- Purple/cyan color scheme
+- 16:9 aspect ratio game canvas
+- Neon glow effects
+- Loading animations
+- Error handling
+
+## ğŸš€ Quick Start
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Setup environment**:
+   ```bash
+   cp .env.example .env.local
+   # Add your OpenRouter API key
+   ```
+
+3. **Run development server**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Open browser**:
+   ```
+   http://localhost:3000
+   ```
+
+## ğŸ“– SDK Usage
+
+```javascript
+// In your p5.js game
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    
+    // Register moddable variables
+    SDK.registerRemix({
+        playerSpeed: 5,
+        gravity: 0.5
+    });
+    
+    // Listen for updates
+    SDK.onRemixUpdate((vars) => {
+        playerSpeed = vars.playerSpeed;
+    });
+    
+    SDK.gameReady();
+    SDK.gameStart();
+}
+
+function draw() {
+    // Game logic
+    SDK.addScore(1);
+}
+
+function gameOver() {
+    SDK.gameEnd(SDK.getScore());
+}
+```
+
+## ğŸ”— Important URLs
+
+- `/` - Homepage
+- `/create` - Create new game
+- `/profil` - User profile
+- `/sdk-test` - SDK test page
+- `/api/generate-game` - AI generation API
+
+## ğŸ› ï¸ Tech Stack
+
+- **Framework**: Next.js 16.1.1
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4
+- **Animation**: Framer Motion
+- **Web3**: Wagmi 3, Viem 2
+- **AI**: OpenRouter (Gemini 2.0)
+- **Game Engine**: p5.js 1.4.0
+
+## ğŸ“ Notes
+
+- All API keys are stored in `.env.local` (not committed)
+- SDK runs in isolated iframe for security
+- Supports both simplified and modular SDK APIs
+- Farcade compatibility shim included
+- Mock game generator for offline testing
+
+---
+
+**Generated**: 2026-01-12
+**Version**: 1.0.0
+**Project**: Game Factory - AI Game Generator with Remix Support
+
+
+========================================
 FILE: src/app/layout.tsx
+LINES: 29
 ========================================
 
 import type { Metadata } from 'next';
@@ -607,6 +1398,7 @@ export default function RootLayout({
 
 ========================================
 FILE: src/app/page.tsx
+LINES: 110
 ========================================
 
 'use client';
@@ -722,6 +1514,7 @@ export default function Home() {
 
 ========================================
 FILE: src/app/globals.css
+LINES: 51
 ========================================
 
 @import "tailwindcss";
@@ -778,6 +1571,7 @@ body {
 
 ========================================
 FILE: src/app/create/page.tsx
+LINES: 47
 ========================================
 
 'use client';
@@ -830,6 +1624,7 @@ export default function CreatePage() {
 
 ========================================
 FILE: src/app/profil/page.tsx
+LINES: 149
 ========================================
 
 'use client';
@@ -984,6 +1779,7 @@ export default function ProfilPage() {
 
 ========================================
 FILE: src/app/sdk-test/page.tsx
+LINES: 241
 ========================================
 
 'use client';
@@ -1230,10 +2026,13 @@ export default function SDKTest() {
 
 ========================================
 FILE: src/app/api/generate-game/route.ts
+LINES: 408
 ========================================
 
 import { NextRequest, NextResponse } from 'next/server';
 import { AI_CONFIG } from '@/config/ai';
+
+// Base prompt for new game creation
 
 const SYSTEM_PROMPT = `Sen hem bir Oyun TasarÄ±mÄ± UzmanÄ± hem de deneyimli bir p5.js GeliÅŸtiricisisin. KullanÄ±cÄ±nÄ±n girdiÄŸi oyun fikrini analiz et ve aÅŸaÄŸÄ±daki ÅŸemaya uygun bir JSON objesi dÃ¶ndÃ¼r.
 
@@ -1248,10 +2047,75 @@ JSON FormatÄ±:
   "visualStyle": "GÃ¶rsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
   "startingScene": "Oyunun baÅŸlangÄ±Ã§ sahnesinin atmosferik betimlemesi",
   "playerActions": ["SaldÄ±r", "KaÃ§", "KeÅŸfet" gibi oyunun baÅŸlangÄ±cÄ±nda yapÄ±labilecek 3 eylem],
-  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU SDK ENTEGRASYONU: Oyun kodunun EN BAÅINDA (setup fonksiyonunun iÃ§inde) MUTLAKA ÅŸu satÄ±rlarÄ± ekle: SDK.registerMods({ playerSpeed: 5, gravity: 0.8, jumpPower: 10 }); ve SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; jumpPower = vars.jumpPower; }); ArdÄ±ndan SDK.gameReady(); ve SDK.gameStart(); Ã§aÄŸÄ±r. Oyun bittiÄŸinde SDK.gameEnd(score); kullan. Skor gÃ¼ncellemek iÃ§in SDK.submitScore(score) veya SDK.addScore(10) kullan. Ã–RNEK KOD YAPISI: let playerSpeed = 5; let gravity = 0.8; let score = 0; function setup() { createCanvas(windowWidth, windowHeight); SDK.registerMods({ playerSpeed: 5, gravity: 0.8 }); SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; }); SDK.gameReady(); SDK.gameStart(); } function draw() { background(0); /* oyun mantÄ±ÄŸÄ± */ SDK.submitScore(score); } function keyPressed() { if (key === 'q') SDK.gameEnd(score); } - Sadece saf JavaScript kodu yaz, HTML taglarÄ± OLMASIN. Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap."
+  "modSchema": [
+    {
+      "key": "playerSpeed",
+      "type": "range",
+      "label": "Player Speed",
+      "defaultValue": 5,
+      "min": 1,
+      "max": 20,
+      "step": 0.5
+    },
+    {
+      "key": "gravity",
+      "type": "range",
+      "label": "Gravity",
+      "defaultValue": 0.6,
+      "min": 0,
+      "max": 2,
+      "step": 0.1
+    },
+    {
+      "key": "themeColor",
+      "type": "color",
+      "label": "Theme Color",
+      "defaultValue": "#00ccff"
+    },
+    {
+      "key": "enableParticles",
+      "type": "boolean",
+      "label": "Enable Particles",
+      "defaultValue": true
+    }
+  ],
+  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU: 1) modSchema'daki TÃœM deÄŸiÅŸkenleri GLOBAL olarak tanÄ±mla (let playerSpeed = 5; let gravity = 0.6; vb.). 2) setup() iÃ§inde SDK.registerMods() Ã§aÄŸÄ±r ve modSchema'daki AYNI key'leri kullan. 3) SDK.onModUpdate() ile deÄŸiÅŸkenleri gÃ¼ncelle. 4) SDK.gameReady() ve SDK.gameStart() Ã§aÄŸÄ±r. Ã–RNEK: let playerSpeed = 5; let gravity = 0.6; let themeColor; function setup() { createCanvas(windowWidth, windowHeight); themeColor = color('#00ccff'); SDK.registerMods({ playerSpeed: 5, gravity: 0.6, themeColor: '#00ccff' }); SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; themeColor = color(vars.themeColor); }); SDK.gameReady(); SDK.gameStart(); } - Sadece JavaScript kodu, HTML yok. Canvas: createCanvas(windowWidth, windowHeight)."
 }
 
-KRÄ°TÄ°K: gameCode iÃ§inde SDK.registerMods() Ã§aÄŸrÄ±sÄ± ZORUNLUDUR! Bu olmadan oyun Ã§alÄ±ÅŸmaz. SADECE geÃ§erli JSON dÃ¶ndÃ¼r, baÅŸka hiÃ§bir aÃ§Ä±klama veya metin ekleme.`;
+KRÄ°TÄ°K KURALLAR:
+1. modSchema'da tanÄ±mlanan HER deÄŸiÅŸken gameCode'da GLOBAL olarak tanÄ±mlanmalÄ±
+2. SDK.registerMods() Ã§aÄŸrÄ±sÄ± modSchema ile AYNI key'leri kullanmalÄ±
+3. type: "range" iÃ§in min, max, step ZORUNLU
+4. type: "color" iÃ§in sadece defaultValue
+5. type: "boolean" iÃ§in sadece defaultValue
+6. SADECE geÃ§erli JSON dÃ¶ndÃ¼r, baÅŸka aÃ§Ä±klama ekleme.`;
+
+// Revision prompt for updating existing games
+const REVISION_PROMPT = (previousGameData: any, newInstructions: string) => `Sen bir oyun geliÅŸtirme uzmanÄ±sÄ±n. KullanÄ±cÄ± mevcut bir oyunu revize etmek istiyor.
+
+MEVCUT OYUN:
+${JSON.stringify(previousGameData, null, 2)}
+
+KullanÄ±cÄ±nÄ±n yeni talimatÄ±: "${newInstructions}"
+
+GÃ–REV: SÄ±fÄ±rdan oyun YAPMA. Mevcut gameCode ve modSchema'yÄ± temel al ve kullanÄ±cÄ±nÄ±n talebini entegre et.
+
+KRÄ°TÄ°K KURALLAR:
+1. gameCode'u gÃ¼ncelle (yeni Ã¶zellikler ekle/deÄŸiÅŸtir, mevcut Ã¶zellikleri koru)
+2. modSchema'yÄ± gÃ¼ncelle (yeni parametreler varsa ekle, mevcut parametreleri koru)
+3. TÃ¼m global deÄŸiÅŸkenleri koru ve yenilerini ekle
+4. SDK.registerMods() Ã§aÄŸrÄ±sÄ±nÄ± yeni parametrelerle gÃ¼ncelle
+5. gameName, genre, mechanics gibi metadata'yÄ± gÃ¼ncelle (gerekirse)
+6. SADECE geÃ§erli JSON dÃ¶ndÃ¼r, baÅŸka aÃ§Ä±klama ekleme
+
+JSON FormatÄ±: (Ã¶nceki ile aynÄ± yapÄ±, gÃ¼ncellenmiÅŸ iÃ§erikle)
+{
+  "gameName": "GÃ¼ncellenmiÅŸ oyun adÄ±",
+  "genre": "...",
+  "mechanics": [...],
+  "modSchema": [...mevcut + yeni parametreler...],
+  "gameCode": "...gÃ¼ncellenmiÅŸ kod..."
+}`;
 
 // --- DYNAMIC MOCK GENERATOR (SDK UYUMLU VERSÄ°YON) ---
 function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong', description: string) {
@@ -1499,9 +2363,11 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
 
 export async function POST(request: NextRequest) {
     let description = "";
+    let previousGameData = null;
     try {
         const json = await request.json();
         description = json.description || "";
+        previousGameData = json.previousGameData || null; // NEW: Support for iterative revisions
 
         const apiKey = AI_CONFIG.apiKey;
         if (!apiKey) throw new Error('API Key configuration missing');
@@ -1517,8 +2383,18 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
                 "model": "google/gemini-2.0-flash-001",
                 "messages": [
-                    { "role": "system", "content": SYSTEM_PROMPT },
-                    { "role": "user", "content": `KullanÄ±cÄ±nÄ±n oyun fikri: ${description}` }
+                    {
+                        "role": "system",
+                        "content": previousGameData
+                            ? REVISION_PROMPT(previousGameData, description)
+                            : SYSTEM_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": previousGameData
+                            ? `Oyunu ÅŸu ÅŸekilde gÃ¼ncelle: ${description}`
+                            : `KullanÄ±cÄ±nÄ±n oyun fikri: ${description}`
+                    }
                 ]
             })
         });
@@ -1564,6 +2440,7 @@ export async function POST(request: NextRequest) {
 
 ========================================
 FILE: src/components/GamePlayer.tsx
+LINES: 316
 ========================================
 
 'use client';
@@ -1825,49 +2702,6 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                 </div>
             </div>
 
-            {/* MOD CONTROLS PANEL */}
-            {Object.keys(modVars).length > 0 && (
-                <div className="absolute top-4 left-4 z-40 bg-black/80 backdrop-blur border border-purple-500/30 rounded-xl p-4 w-64 shadow-2xl">
-                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <span>âš™ï¸</span> Mod Console
-                    </h3>
-                    <div className="space-y-3">
-                        {Object.entries(modVars).map(([key, value]) => (
-                            <div key={key} className="space-y-1">
-                                <div className="flex justify-between text-[10px] text-gray-400 font-mono">
-                                    <span>{key}</span>
-                                    <span className="text-white">{typeof value === 'number' ? value.toFixed(1) : String(value)}</span>
-                                </div>
-                                {typeof value === 'number' ? (
-                                    <input
-                                        type="range"
-                                        min={0}
-                                        max={value > 10 ? 100 : 20}
-                                        step={0.1}
-                                        value={value}
-                                        onChange={(e) => handleModChange(key, parseFloat(e.target.value))}
-                                        className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                    />
-                                ) : typeof value === 'boolean' ? (
-                                    <button
-                                        onClick={() => handleModChange(key, !value)}
-                                        className={`w-full py-1 text-xs rounded border ${value ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-red-500/20 border-red-500 text-red-400'}`}
-                                    >
-                                        {value ? 'ENABLED' : 'DISABLED'}
-                                    </button>
-                                ) : (
-                                    <input
-                                        type="color"
-                                        value={value}
-                                        onChange={(e) => handleModChange(key, e.target.value)}
-                                        className="w-full h-6 rounded cursor-pointer"
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             {/* OYUN ALANI */}
             <div className={`relative flex-1 flex flex-col justify-center items-center p-4 ${isInline ? '' : 'p-8'}`}>
@@ -1928,15 +2762,27 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
 
 ========================================
 FILE: src/components/GameDescriptionForm.tsx
+LINES: 377
 ========================================
 
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'react-hot-toast';
 import { GAME_FACTORY_ADDRESS, GAME_FACTORY_ABI } from '@/config/wagmi';
 import { GamePlayer } from './GamePlayer';
+
+interface ModSchemaItem {
+    key: string;
+    type: 'range' | 'color' | 'boolean';
+    label: string;
+    defaultValue: number | string | boolean;
+    min?: number;
+    max?: number;
+    step?: number;
+}
 
 interface GameData {
     gameName: string;
@@ -1948,6 +2794,7 @@ interface GameData {
     visualStyle: string;
     startingScene: string;
     playerActions: string[];
+    modSchema?: ModSchemaItem[];
     gameCode: string;
 }
 
@@ -1957,7 +2804,7 @@ export function GameDescriptionForm() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [gameData, setGameData] = useState<GameData | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [modValues, setModValues] = useState<Record<string, any>>({});
 
     const {
         data: hash,
@@ -1982,33 +2829,62 @@ export function GameDescriptionForm() {
         }
     }, [isConfirmed]);
 
+    // Initialize mod values from schema
+    useEffect(() => {
+        if (gameData?.modSchema) {
+            const initialValues: Record<string, any> = {};
+            gameData.modSchema.forEach(item => {
+                initialValues[item.key] = item.defaultValue;
+            });
+            setModValues(initialValues);
+        }
+    }, [gameData]);
+
+    // Handle mod value changes and send to GamePlayer
+    const handleModChange = (key: string, value: any) => {
+        setModValues(prev => ({ ...prev, [key]: value }));
+
+        // Send UPDATE_MODS to GamePlayer iframe
+        const iframe = document.querySelector('iframe');
+        if (iframe?.contentWindow) {
+            iframe.contentWindow.postMessage({
+                type: 'UPDATE_MODS',
+                payload: { [key]: value }
+            }, '*');
+        }
+    };
+
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!description.trim()) return;
 
         setIsGenerating(true);
         setError(null);
-        setGameData(null);
 
         try {
             const response = await fetch('/api/generate-game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description }),
+                body: JSON.stringify({
+                    description,
+                    previousGameData: gameData || null
+                }),
             });
 
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Generation failed');
 
             setGameData(data.gameData);
+            setDescription('');
 
             if (data.isMock) {
-                toast("AI Servisi MeÅŸgul: SimÃ¼lasyon Modu Aktif", {
+                toast("AI Service Busy: Simulation Mode Active", {
                     icon: 'âš ï¸',
                     style: { background: '#333', color: '#fbbf24' }
                 });
             } else {
-                toast.success('System Online: AI Game Generated.');
+                const isRevision = gameData !== null;
+                toast.success(isRevision ? 'Game Evolved!' : 'Engine Initialized!');
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'System Failure');
@@ -2020,16 +2896,21 @@ export function GameDescriptionForm() {
 
     const handleMint = () => {
         if (!gameData || !isConnected) {
-            if (!isConnected) toast.error('Wallet link required.');
+            toast.error('Please connect wallet first');
             return;
         }
 
-        toast.loading('Deploying to Mantle...', { id: 'mint' });
+        const mintData = {
+            ...gameData,
+            currentModValues: modValues
+        };
+
+        toast.loading('Preparing transaction...', { id: 'mint' });
         writeContract({
             address: GAME_FACTORY_ADDRESS,
             abi: GAME_FACTORY_ABI,
             functionName: 'mintGame',
-            args: [gameData.gameName, JSON.stringify(gameData)],
+            args: [gameData.gameName, JSON.stringify(mintData)],
         }, {
             onSuccess: () => {
                 toast.dismiss('mint');
@@ -2039,198 +2920,224 @@ export function GameDescriptionForm() {
         });
     };
 
-    const examplePrompts = [
-        "Space Shooter with Token Rewards",
-        "Cyberpunk RPG Adventure",
-        "Physics Puzzle Platformer",
-        "Survival Zombie Strategy",
-    ];
-
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full font-sans text-slate-200">
-            {/* LEFT COLUMN: DESIGN LAB (Bento Layout) */}
-            <div className="lg:col-span-5 flex flex-col gap-6">
+        <div className="h-full w-full relative bg-[#050505]">
+            <AnimatePresence mode="wait">
+                {!gameData ? (
+                    // ========== CENTERED INITIAL STATE ==========
+                    <motion.div
+                        key="centered"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full flex items-center justify-center p-8"
+                    >
+                        <div className="w-full max-w-2xl">
+                            {/* Design Lab Card */}
+                            <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 opacity-50"></div>
 
-                {/* CARD 1: MAIN INPUT - Glassmorphism */}
-                <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl group transition-all hover:border-white/10">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 opacity-50"></div>
+                                <div className="p-8 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                                            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                            </div>
+                                            Live Studio
+                                        </h2>
+                                        <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-purple-300 bg-purple-500/10 rounded-full border border-purple-500/20">v3.0 Beta</span>
+                                    </div>
 
-                    <div className="p-6 md:p-8 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                                    <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                                    <div className="space-y-3">
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Game Directive</label>
+                                        <div className="relative">
+                                            <textarea
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                placeholder="// Describe your game vision...\n// E.g. Cyberpunk platformer with time-manipulation mechanics"
+                                                className="w-full h-56 bg-black/40 border border-white/5 rounded-2xl p-6 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
+                                            />
+                                            <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
+                                                {description.length} chars
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!description.trim() || isGenerating}
+                                        className={`w-full py-5 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-3 relative overflow-hidden ${isGenerating
+                                            ? 'bg-neutral-800 text-gray-400 cursor-not-allowed border border-white/5'
+                                            : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] hover:shadow-purple-500/20'
+                                            }`}
+                                    >
+                                        {isGenerating && (
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
+                                        )}
+                                        {isGenerating ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                                                <span className="font-mono text-sm">INITIALIZING...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-lg">ğŸš€ INITIALIZE ENGINE</span>
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {error && (
+                                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                            <p className="text-red-400 font-mono text-sm">{error}</p>
+                                        </div>
+                                    )}
                                 </div>
-                                Design Lab
-                            </h2>
-                            <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-purple-300 bg-purple-500/10 rounded-full border border-purple-500/20">v2.0.1 Beta</span>
+                            </div>
                         </div>
+                    </motion.div>
+                ) : (
+                    // ========== STUDIO LAYOUT (30% / 70%) ==========
+                    <motion.div
+                        key="studio"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4 }}
+                        className="h-full grid grid-cols-12 gap-4 p-4"
+                    >
+                        {/* LEFT SIDEBAR: Studio Controls (30%) */}
+                        <motion.div
+                            initial={{ x: -100, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.4 }}
+                            className="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full"
+                        >
+                            {/* Chat Input */}
+                            <div className="bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-4 border border-white/5 shadow-xl">
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-bold">
+                                        <span>ğŸ’¬</span>
+                                        <span>Evolution Prompt</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                                            placeholder="How should we evolve the game?"
+                                            className="flex-1 bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                        />
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={!description.trim() || isGenerating}
+                                            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95"
+                                        >
+                                            {isGenerating ? 'â³' : 'âœ¨'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Directive Input</label>
-                            <div className="relative group/input">
-                                <textarea
-                                    id="userInput"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="// Initialize game parameters...\n// E.g. Pixel Art Platformer with double-jump mechanics..."
-                                    className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-5 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
+                            {/* Mod Controls */}
+                            {gameData?.modSchema && gameData.modSchema.length > 0 && (
+                                <div className="flex-1 bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-4 border border-white/5 shadow-xl overflow-y-auto">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                            <span>âš™ï¸</span>
+                                            <span>Live Parameters</span>
+                                        </h3>
+                                        <span className="px-2 py-1 text-[9px] font-mono tracking-widest uppercase text-green-300 bg-green-500/10 rounded-full border border-green-500/20">Active</span>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {gameData.modSchema.map((item) => (
+                                            <div key={item.key} className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-gray-400 font-medium">{item.label}</span>
+                                                    <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded text-[10px]">
+                                                        {typeof modValues[item.key] === 'number'
+                                                            ? modValues[item.key].toFixed(1)
+                                                            : String(modValues[item.key])}
+                                                    </span>
+                                                </div>
+
+                                                {item.type === 'range' && (
+                                                    <input
+                                                        type="range"
+                                                        min={item.min}
+                                                        max={item.max}
+                                                        step={item.step}
+                                                        value={modValues[item.key] || item.defaultValue}
+                                                        onChange={(e) => handleModChange(item.key, parseFloat(e.target.value))}
+                                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 hover:accent-purple-400 transition-colors"
+                                                    />
+                                                )}
+
+                                                {item.type === 'color' && (
+                                                    <input
+                                                        type="color"
+                                                        value={modValues[item.key] || item.defaultValue}
+                                                        onChange={(e) => handleModChange(item.key, e.target.value)}
+                                                        className="w-full h-10 rounded-lg cursor-pointer border border-white/10"
+                                                    />
+                                                )}
+
+                                                {item.type === 'boolean' && (
+                                                    <button
+                                                        onClick={() => handleModChange(item.key, !modValues[item.key])}
+                                                        className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
+                                                                ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
+                                                                : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
+                                                            }`}
+                                                    >
+                                                        {modValues[item.key] ? 'âœ“ ENABLED' : 'âœ— DISABLED'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Deploy Button */}
+                            <button
+                                onClick={handleMint}
+                                disabled={!isConnected || isMinting || isConfirming}
+                                className="w-full py-4 bg-white hover:bg-gray-100 disabled:bg-gray-700 disabled:cursor-not-allowed text-black disabled:text-gray-400 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
+                            >
+                                {isMinting || isConfirming ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin"></div>
+                                        <span>Deploying...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>ğŸš€</span>
+                                        <span>Deploy to Chain</span>
+                                    </>
+                                )}
+                            </button>
+                        </motion.div>
+
+                        {/* RIGHT PANEL: Live Preview (70%) */}
+                        <motion.div
+                            initial={{ x: 100, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.3, duration: 0.4 }}
+                            className="col-span-12 lg:col-span-8 h-full"
+                        >
+                            <div className="h-full bg-[#050505] rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative">
+                                <GamePlayer
+                                    key={gameData.gameCode.slice(0, 100)}
+                                    gameData={gameData}
+                                    isInline={true}
                                 />
-                                <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
-                                    {description.length} chars
-                                </div>
                             </div>
-                        </div>
-
-                        <button
-                            id="submit-button"
-                            onClick={(e) => handleSubmit(e)}
-                            disabled={!description.trim() || isGenerating}
-                            className={`w-full py-4 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-3 relative overflow-hidden ${isGenerating
-                                ? 'bg-neutral-800 text-gray-400 cursor-not-allowed border border-white/5'
-                                : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] hover:shadow-purple-500/20'
-                                }`}
-                        >
-                            {isGenerating && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
-                            )}
-                            {isGenerating ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
-                                    <span className="font-mono text-xs">PROCESSING...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>INITIALIZE ENGINE</span>
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                {/* CARD 2: SUGGESTIONS GRID */}
-                <div className="grid grid-cols-2 gap-4">
-                    {examplePrompts.map((prompt, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setDescription(prompt)}
-                            className="group relative p-4 bg-neutral-900/40 border border-white/5 hover:border-white/10 rounded-2xl text-left transition-all hover:bg-white/[0.03]"
-                        >
-                            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                            </div>
-                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mb-3 text-gray-400 group-hover:text-white group-hover:bg-white/10 transition-colors font-mono text-xs">
-                                0{i + 1}
-                            </div>
-                            <p className="text-xs font-medium text-gray-400 group-hover:text-gray-200 line-clamp-2 leading-relaxed">
-                                {prompt}
-                            </p>
-                        </button>
-                    ))}
-                </div>
-
-                {/* CARD 3: SPECS (Conditional) */}
-                {gameData && (
-                    <div className="bg-neutral-900/60 border border-white/5 rounded-3xl p-6 backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Technical Specs</h3>
-                        <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                            <div>
-                                <div className="text-[10px] text-gray-500 uppercase">Class</div>
-                                <div className="text-sm font-bold text-white mt-0.5">{gameData.genre}</div>
-                            </div>
-                            <div>
-                                <div className="text-[10px] text-gray-500 uppercase">Style</div>
-                                <div className="text-sm font-bold text-white mt-0.5">{gameData.visualStyle}</div>
-                            </div>
-                            <div className="col-span-2">
-                                <div className="text-[10px] text-gray-500 uppercase mb-1">Difficulty Matrix</div>
-                                <div className="h-2 bg-black/50 rounded-full overflow-hidden flex">
-                                    {[...Array(10)].map((_, i) => (
-                                        <div key={i} className={`flex-1 border-r border-black/20 last:border-0 ${i < gameData.difficulty ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'bg-transparent'}`}></div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 )}
-            </div>
-
-            {/* RIGHT COLUMN: LIVE ENGINE */}
-            <div className={`lg:col-span-7 relative bg-[#050505] rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-700 ${isGenerating ? 'ring-2 ring-purple-500/50' : ''}`}>
-
-                {/* Status Bar */}
-                <div className="h-14 border-b border-white/5 bg-white/[0.02] flex items-center justify-center px-6">
-                    <div className="flex items-center gap-3">
-                        <div className={`relative w-2 h-2 rounded-full ${gameData ? 'bg-emerald-500' : (isGenerating ? 'bg-yellow-500 animate-pulse' : 'bg-red-500')}`}>
-                            {gameData && <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>}
-                        </div>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">
-                            {isGenerating ? 'PROCESSING STREAM...' : (gameData ? 'SYSTEM ONLINE' : 'STANDBY MODE')}
-                        </span>
-                    </div>
-
-                    {gameData && (
-                        <div className="absolute right-6 flex gap-2">
-                            <button onClick={handleMint} disabled={isMinting} className="h-8 px-4 flex items-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded text-[10px] font-bold text-purple-300 uppercase tracking-wide transition-colors">
-                                {isMinting ? 'Deploying...' : 'Deploy to Chain'}
-                            </button>
-                            <button onClick={() => setIsPlaying(true)} className="h-8 w-8 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded text-gray-300 hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Canvas Container */}
-                <div id="responseArea" className="flex-1 relative bg-[url('/grid-dark.svg')] bg-[length:40px_40px] bg-center flex items-center justify-center">
-
-                    {/* Visual Loading State */}
-                    {isGenerating && (
-                        <div id="loading-overlay" className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center space-y-6 animate-in fade-in duration-300">
-                            <div className="relative w-24 h-24">
-                                <div className="absolute inset-0 border-t-2 border-purple-500 rounded-full animate-spin"></div>
-                                <div className="absolute inset-2 border-r-2 border-blue-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
-                                <div className="absolute inset-4 border-b-2 border-pink-500 rounded-full animate-spin [animation-duration:1s]"></div>
-                            </div>
-                            <div className="space-y-1">
-                                <h3 className="text-xl font-bold text-white tracking-tight">Generating Neural Assets</h3>
-                                <p className="text-sm text-purple-400 font-mono">Resolving physics engine...</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Error State */}
-                    {error && (
-                        <div id="error-message" className="absolute inset-0 z-20 bg-red-950/20 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center">
-                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
-                                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <p className="text-red-400 font-mono text-sm max-w-md">{error}</p>
-                        </div>
-                    )}
-
-                    {gameData ? (
-                        <GamePlayer gameData={gameData} isInline={true} />
-                    ) : (
-                        !isGenerating && (
-                            <div className="text-center opacity-20 hover:opacity-100 transition-opacity duration-500 select-none">
-                                <div className="text-6xl mb-4 font-thin tracking-tighter text-white">GAME<span className="font-bold text-purple-500">OS</span></div>
-                                <p className="font-mono text-xs tracking-[0.3em] text-white">READY FOR INITIALIZATION</p>
-                            </div>
-                        )
-                    )}
-                </div>
-            </div>
-
-            {/* FULLSCREEN MODAL */}
-            {isPlaying && gameData && (
-                <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 lg:p-12 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="w-full h-full relative bg-[#050505] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden ring-1 ring-white/5">
-                        <GamePlayer gameData={gameData} isInline={false} onClose={() => setIsPlaying(false)} />
-                    </div>
-                </div>
-            )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -2238,6 +3145,7 @@ export function GameDescriptionForm() {
 
 ========================================
 FILE: src/components/ConnectButton.tsx
+LINES: 143
 ========================================
 
 'use client';
@@ -2386,6 +3294,7 @@ export function ConnectButton() {
 
 ========================================
 FILE: src/components/ProfileButton.tsx
+LINES: 193
 ========================================
 
 'use client';
@@ -2584,6 +3493,7 @@ export function ProfileButton() {
 
 ========================================
 FILE: src/components/MethBalance.tsx
+LINES: 95
 ========================================
 
 'use client';
@@ -2684,6 +3594,7 @@ export function MethBalance() {
 
 ========================================
 FILE: src/components/Providers.tsx
+LINES: 21
 ========================================
 
 'use client';
@@ -2710,6 +3621,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
 ========================================
 FILE: src/providers/Web3Provider.tsx
+LINES: 19
 ========================================
 
 'use client';
@@ -2734,6 +3646,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 
 ========================================
 FILE: src/config/wagmi.ts
+LINES: 80
 ========================================
 
 import { http, createConfig } from 'wagmi';
@@ -2819,6 +3732,7 @@ declare module 'wagmi' {
 
 ========================================
 FILE: src/config/ai.ts
+LINES: 7
 ========================================
 
 // AI Configuration
@@ -2831,6 +3745,7 @@ export const AI_CONFIG = {
 
 ========================================
 FILE: src/sdk/index.ts
+LINES: 58
 ========================================
 
 /**
@@ -2894,6 +3809,7 @@ export default getSDK();
 
 ========================================
 FILE: src/sdk/SimplifiedCore.ts
+LINES: 175
 ========================================
 
 /**
@@ -3074,6 +3990,7 @@ export type { ModVariables };
 
 ========================================
 FILE: src/sdk/core/GameFactorySDK.ts
+LINES: 185
 ========================================
 
 import { SDKConfig } from './types';
@@ -3264,6 +4181,7 @@ export const getSDK = (config?: SDKConfig) => GameFactorySDK.getInstance(config)
 
 ========================================
 FILE: src/sdk/core/types.ts
+LINES: 28
 ========================================
 
 // Core SDK Types
@@ -3297,6 +4215,7 @@ export type ErrorCallback = (error: Error) => void;
 
 ========================================
 FILE: src/sdk/modules/ScoreModule.ts
+LINES: 171
 ========================================
 
 import { ScoreData, MessagePayload } from '../core/types';
@@ -3473,6 +4392,7 @@ export class ScoreModule {
 
 ========================================
 FILE: src/sdk/modules/LifecycleModule.ts
+LINES: 213
 ========================================
 
 import { GameState, MessagePayload } from '../core/types';
@@ -3691,6 +4611,7 @@ export class LifecycleModule {
 
 ========================================
 FILE: src/sdk/modules/SchemaModule.ts
+LINES: 206
 ========================================
 
 import { MessagePayload } from '../core/types';
@@ -3902,6 +4823,7 @@ export class SchemaModule {
 
 ========================================
 FILE: src/sdk/modules/AssetsModule.ts
+LINES: 262
 ========================================
 
 import { MessagePayload } from '../core/types';
@@ -4169,6 +5091,7 @@ export class AssetsModule {
 
 ========================================
 FILE: src/sdk/shims/farcade-shim.ts
+LINES: 76
 ========================================
 
 /**
@@ -4246,4 +5169,12 @@ if (typeof window !== 'undefined') {
 }
 
 export { createFarcadeShim };
+
+
+========================================
+SUMMARY
+========================================
+Total Files: 34
+Total Lines: 4963
+Generated: 2026-01-12 14:52:35
 
