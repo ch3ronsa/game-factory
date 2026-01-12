@@ -77,53 +77,23 @@ export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving }
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
-            className="flex-1 flex gap-6 p-6 overflow-hidden"
+            className="flex-1 flex overflow-hidden relative"
         >
-            {/* LEFT: Game Preview */}
-            <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex items-center justify-between mb-4">
+            {/* LEFT SIDEBAR: Controls */}
+            <div className="w-72 flex flex-col bg-black/80 backdrop-blur-xl border-r border-white/10 p-6 overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold text-white">{gameData.gameName}</h2>
-                        <p className="text-white/40 text-sm">{gameData.genre}</p>
+                        <h2 className="text-lg font-bold text-white">{gameData.gameName}</h2>
+                        <p className="text-white/40 text-xs">{gameData.genre}</p>
                     </div>
                 </div>
 
-                <div className="flex-1 bg-black rounded-2xl overflow-hidden border border-white/10">
-                    <GamePlayer
-                        key={gameData.gameCode.slice(0, 50)}
-                        gameData={gameData}
-                        isInline={true}
-                    />
-                </div>
-
-                {/* Evolve Input */}
-                <form onSubmit={handleEvolve} className="mt-4 flex gap-2">
-                    <input
-                        type="text"
-                        value={evolveInput}
-                        onChange={(e) => setEvolveInput(e.target.value)}
-                        placeholder="Describe changes... (e.g., 'Add enemies')"
-                        disabled={isEvolving}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 outline-none focus:border-purple-500/50 disabled:opacity-50"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!evolveInput.trim() || isEvolving}
-                        className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                    >
-                        {isEvolving ? '...' : 'Evolve'}
-                    </button>
-                </form>
-            </div>
-
-            {/* RIGHT: Controls Panel */}
-            <div className="w-80 flex flex-col bg-white/5 border border-white/10 rounded-2xl p-6 overflow-y-auto">
-                <h3 className="text-sm font-bold text-white/50 uppercase tracking-widest mb-6">
+                <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-4">
                     Customize
                 </h3>
 
                 {/* Mod Sliders */}
-                <div className="flex-1 space-y-6">
+                <div className="flex-1 space-y-5 mb-6">
                     {gameData.modSchema?.map((item) => (
                         <div key={item.key} className="space-y-2">
                             <div className="flex justify-between text-xs text-gray-400">
@@ -173,19 +143,59 @@ export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving }
                 </div>
 
                 {/* Navigation Buttons */}
-                <div className="flex gap-3 mt-6 pt-6 border-t border-white/10">
+                <div className="flex gap-3 pt-6 border-t border-white/10">
                     <button
                         onClick={onBack}
-                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/70 font-medium rounded-xl transition-all"
+                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/70 font-medium rounded-xl transition-all text-sm"
                     >
                         ← Back
                     </button>
                     <button
                         onClick={() => onNext(modValues)}
-                        className="flex-1 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-100 transition-all"
+                        className="flex-1 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-100 transition-all text-sm"
                     >
                         Continue →
                     </button>
+                </div>
+            </div>
+
+            {/* RIGHT: Game Preview (Full Screen) */}
+            <div className="flex-1 flex flex-col bg-black">
+                {/* Game Canvas */}
+                <div className="flex-1 relative">
+                    <GamePlayer
+                        key={gameData.gameCode.slice(0, 50)}
+                        gameData={gameData}
+                        isInline={true}
+                    />
+                </div>
+
+                {/* Bottom Evolve Input */}
+                <div className="p-4 bg-black/95 border-t border-white/10">
+                    <form onSubmit={handleEvolve} className="flex gap-3 max-w-2xl mx-auto">
+                        <div className="flex-1 relative">
+                            <input
+                                type="text"
+                                value={evolveInput}
+                                onChange={(e) => setEvolveInput(e.target.value)}
+                                placeholder="Describe changes... (e.g., 'Add enemies', 'Make it faster')"
+                                disabled={isEvolving}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 outline-none focus:border-purple-500/50 disabled:opacity-50 text-sm"
+                            />
+                            {isEvolving && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={!evolveInput.trim() || isEvolving}
+                            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+                        >
+                            {isEvolving ? '...' : '✨ Evolve'}
+                        </button>
+                    </form>
                 </div>
             </div>
         </motion.div>
