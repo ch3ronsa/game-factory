@@ -36,6 +36,9 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     // MOD VARIABLES
     const [modVars, setModVars] = useState<Record<string, any>>({});
 
+    // IFRAME KEY FOR RESTART
+    const [iframeKey, setIframeKey] = useState(0);
+
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
     // 🔍 DEBUG NOKTA 4: KARŞILAMA ANI - React tarafındaki listener
@@ -265,6 +268,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
 
                         {!hasError && gameData.gameCode && (
                             <iframe
+                                key={iframeKey}
                                 ref={iframeRef}
                                 srcDoc={generateIframeSrcDoc()}
                                 className="absolute inset-0 w-full h-full border-0"
@@ -301,10 +305,9 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                         {/* Restart Button - Bottom Right */}
                         <button
                             onClick={() => {
-                                if (iframeRef.current) {
-                                    iframeRef.current.src = iframeRef.current.src; // Reload iframe
-                                    setScore(0);
-                                }
+                                setIframeKey(prev => prev + 1); // Force iframe remount
+                                setScore(0);
+                                setIsLoading(true);
                             }}
                             className="absolute bottom-4 right-4 z-20 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 rounded-lg text-white text-sm font-medium transition-all"
                         >
