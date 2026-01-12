@@ -46,7 +46,6 @@ interface CustomizeStepProps {
 export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving, evolutionHistory = [] }: CustomizeStepProps) {
     const [modValues, setModValues] = useState<Record<string, any>>({});
     const [evolveInput, setEvolveInput] = useState('');
-    const [showHistory, setShowHistory] = useState(false);
 
     // Initialize mod values from schema
     useEffect(() => {
@@ -99,69 +98,8 @@ export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving, 
             exit={{ opacity: 0, x: -50 }}
             className="flex-1 flex overflow-hidden relative"
         >
-            {/* EVOLUTION HISTORY PANEL */}
-            {showHistory && (
-                <div className="w-80 flex flex-col bg-black/90 backdrop-blur-xl border-r border-white/10 overflow-hidden">
-                    <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                        <h3 className="text-sm font-bold text-white uppercase">Evolution History</h3>
-                        <button
-                            onClick={() => setShowHistory(false)}
-                            className="text-white/40 hover:text-white text-lg"
-                        >
-                            ×
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {evolutionHistory.length === 0 ? (
-                            <div className="text-center text-white/30 text-sm py-8">
-                                No evolution commands yet.<br />
-                                Use "Evolve" to make changes.
-                            </div>
-                        ) : (
-                            evolutionHistory.map((step) => (
-                                <div key={step.id} className="space-y-2">
-                                    {/* User Command */}
-                                    <div className="flex justify-end">
-                                        <div className="bg-purple-600 rounded-lg px-3 py-2 max-w-[80%]">
-                                            <div className="text-[10px] text-white/60 mb-1">You</div>
-                                            <div className="text-sm text-white">{step.userCommand}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* AI Response */}
-                                    {step.aiResponse && (
-                                        <div className="flex justify-start">
-                                            <div className={`rounded-lg px-3 py-2 max-w-[80%] ${step.success ? 'bg-green-600/20 border border-green-500/30' : 'bg-red-600/20 border border-red-500/30'}`}>
-                                                <div className="text-[10px] text-white/60 mb-1">AI</div>
-                                                <div className="text-sm text-white/90">
-                                                    {step.success ? '✓ ' : '✗ '}{step.aiResponse}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* LEFT SIDEBAR: Controls */}
-            <div className="w-72 flex flex-col bg-black/80 backdrop-blur-xl border-r border-white/10 p-6 overflow-y-auto">
-                {/* History Toggle Button */}
-                <button
-                    onClick={() => setShowHistory(!showHistory)}
-                    className="mb-4 p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm flex items-center gap-2 transition-all"
-                >
-                    <span>📜</span>
-                    <span>{showHistory ? 'Hide' : 'Show'} History</span>
-                    {evolutionHistory.length > 0 && (
-                        <span className="ml-auto bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                            {evolutionHistory.length}
-                        </span>
-                    )}
-                </button>
+            {/* LEFT SIDEBAR: Mod Controls */}
+            <div className="w-64 flex flex-col bg-black/80 backdrop-blur-xl border-r border-white/10 p-6 overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-lg font-bold text-white">{gameData.gameName}</h2>
@@ -240,9 +178,8 @@ export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving, 
                 </div>
             </div>
 
-            {/* RIGHT: Game Preview (Full Screen) */}
+            {/* CENTER: Game Preview (Smaller) */}
             <div className="flex-1 flex flex-col bg-black">
-                {/* Game Canvas */}
                 <div className="flex-1 relative">
                     <GamePlayer
                         key={gameData.gameCode.slice(0, 50)}
@@ -250,31 +187,67 @@ export function CustomizeStep({ gameData, onBack, onNext, onEvolve, isEvolving, 
                         isInline={true}
                     />
                 </div>
+            </div>
 
-                {/* Bottom Evolve Input */}
-                <div className="p-4 bg-black/95 border-t border-white/10">
-                    <form onSubmit={handleEvolve} className="flex gap-3 max-w-2xl mx-auto">
-                        <div className="flex-1 relative">
-                            <input
-                                type="text"
-                                value={evolveInput}
-                                onChange={(e) => setEvolveInput(e.target.value)}
-                                placeholder="Describe changes... (e.g., 'Add enemies', 'Make it faster')"
-                                disabled={isEvolving}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 outline-none focus:border-purple-500/50 disabled:opacity-50 text-sm"
-                            />
-                            {isEvolving && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                </div>
-                            )}
+            {/* RIGHT PANEL: Evolution History + Evolve Input */}
+            <div className="w-80 flex flex-col bg-black/90 backdrop-blur-xl border-l border-white/10">
+                {/* Header */}
+                <div className="p-4 border-b border-white/10">
+                    <h3 className="text-sm font-bold text-white uppercase">Development History</h3>
+                    <p className="text-xs text-white/40 mt-1">Track your evolution commands</p>
+                </div>
+
+                {/* History Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {evolutionHistory.length === 0 ? (
+                        <div className="text-center text-white/30 text-sm py-8">
+                            No evolution commands yet.<br />
+                            Use the input below to evolve your game.
                         </div>
+                    ) : (
+                        evolutionHistory.map((step) => (
+                            <div key={step.id} className="space-y-2">
+                                {/* User Command */}
+                                <div className="flex justify-end">
+                                    <div className="bg-purple-600 rounded-lg px-3 py-2 max-w-[85%]">
+                                        <div className="text-[10px] text-white/60 mb-1">You</div>
+                                        <div className="text-sm text-white">{step.userCommand}</div>
+                                    </div>
+                                </div>
+
+                                {/* AI Response */}
+                                {step.aiResponse && (
+                                    <div className="flex justify-start">
+                                        <div className={`rounded-lg px-3 py-2 max-w-[85%] ${step.success ? 'bg-green-600/20 border border-green-500/30' : 'bg-red-600/20 border border-red-500/30'}`}>
+                                            <div className="text-[10px] text-white/60 mb-1">AI</div>
+                                            <div className="text-sm text-white/90">
+                                                {step.success ? '✓ ' : '✗ '}{step.aiResponse}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Evolve Input */}
+                <div className="p-4 border-t border-white/10">
+                    <form onSubmit={handleEvolve} className="space-y-2">
+                        <textarea
+                            value={evolveInput}
+                            onChange={(e) => setEvolveInput(e.target.value)}
+                            placeholder="Describe changes... (e.g., 'Add enemies', 'Make it faster')"
+                            disabled={isEvolving}
+                            rows={3}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/30 outline-none focus:border-purple-500/50 disabled:opacity-50 text-sm resize-none"
+                        />
                         <button
                             type="submit"
                             disabled={!evolveInput.trim() || isEvolving}
-                            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+                            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
                         >
-                            {isEvolving ? '...' : '✨ Evolve'}
+                            {isEvolving ? 'Evolving...' : '✨ Evolve Game'}
                         </button>
                     </form>
                 </div>
