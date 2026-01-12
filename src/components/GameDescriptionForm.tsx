@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { toast } from 'react-hot-toast';
@@ -31,13 +31,23 @@ interface GameData {
     gameCode: string;
 }
 
+interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+}
+
 export function GameDescriptionForm() {
     const { isConnected } = useAccount();
-    const [description, setDescription] = useState('');
+    const [input, setInput] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [gameData, setGameData] = useState<GameData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [modValues, setModValues] = useState<Record<string, any>>({});
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+    const [showConfigPanel, setShowConfigPanel] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const {
         data: hash,
@@ -77,7 +87,6 @@ export function GameDescriptionForm() {
     const handleModChange = (key: string, value: any) => {
         setModValues(prev => ({ ...prev, [key]: value }));
 
-        // Send UPDATE_MODS to GamePlayer iframe
         const iframe = document.querySelector('iframe');
         if (iframe?.contentWindow) {
             iframe.contentWindow.postMessage({
@@ -89,41 +98,76 @@ export function GameDescriptionForm() {
 
     const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!description.trim()) return;
+        if (!input.trim()) return;
+
+        const userMessage: ChatMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: input,
+            timestamp: new Date()
+        };
+        setChatHistory(prev => [...prev, userMessage]);
 
         setIsGenerating(true);
         setError(null);
+        const currentInput = input;
+        setInput('');
 
         try {
             const response = await fetch('/api/generate-game', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    description,
+                    description: currentInput,
                     previousGameData: gameData || null
                 }),
             });
 
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error || 'Generation failed');
+
+            if (!response.ok) {
+                throw new Error(data.error || `API Error: ${response.status}`);
+            }
 
             setGameData(data.gameData);
-            setDescription('');
+
+            const assistantMessage: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: gameData
+                    ? `Updated: ${data.gameData.gameName}`
+                    : `Created: ${data.gameData.gameName}`,
+                timestamp: new Date()
+            };
+            setChatHistory(prev => [...prev, assistantMessage]);
 
             if (data.isMock) {
-                toast("AI Service Busy: Simulation Mode Active", {
-                    icon: '⚠️',
+                toast("⚠️ Simulation Mode Active", {
                     style: { background: '#333', color: '#fbbf24' }
                 });
             } else {
-                const isRevision = gameData !== null;
-                toast.success(isRevision ? 'Game Evolved!' : 'Engine Initialized!');
+                toast.success(gameData ? '✨ Game Evolved!' : '🎮 Game Created!');
+            }
+
+            // Show error details if present
+            if (data.error) {
+                setError(`API Issue: ${data.error}`);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'System Failure');
-            toast.error('AI Processing Failed');
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            setError(errorMsg);
+            toast.error('Failed to generate game');
+
+            const errorMessage: ChatMessage = {
+                id: (Date.now() + 2).toString(),
+                role: 'assistant',
+                content: `Error: ${errorMsg}`,
+                timestamp: new Date()
+            };
+            setChatHistory(prev => [...prev, errorMessage]);
         } finally {
             setIsGenerating(false);
+            inputRef.current?.focus();
         }
     };
 
@@ -154,223 +198,221 @@ export function GameDescriptionForm() {
     };
 
     return (
-        <div className="h-full w-full relative bg-[#050505]">
-            <AnimatePresence mode="wait">
-                {!gameData ? (
-                    // ========== CENTERED INITIAL STATE ==========
+        <div className="h-full w-full relative bg-[#050505] overflow-hidden">
+            {/* CHAT HISTORY OVERLAY */}
+            <AnimatePresence>
+                {chatHistory.length > 0 && (
                     <motion.div
-                        key="centered"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className="h-full flex items-center justify-center p-8"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="absolute top-4 left-1/2 -translate-x-1/2 z-50 max-w-2xl w-full px-4"
                     >
-                        <div className="w-full max-w-2xl">
-                            {/* Design Lab Card */}
-                            <div className="relative overflow-hidden rounded-3xl bg-neutral-900/60 border border-white/5 backdrop-blur-xl shadow-2xl">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 opacity-50"></div>
-
-                                <div className="p-8 space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-                                            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                                                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-                                            </div>
-                                            Live Studio
-                                        </h2>
-                                        <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase text-purple-300 bg-purple-500/10 rounded-full border border-purple-500/20">v3.0 Beta</span>
+                        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 max-h-32 overflow-y-auto space-y-2">
+                            {chatHistory.slice(-3).map((msg) => (
+                                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`px-4 py-2 rounded-xl text-sm max-w-[80%] ${msg.role === 'user'
+                                            ? 'bg-purple-500/20 text-purple-200 border border-purple-500/30'
+                                            : 'bg-blue-500/20 text-blue-200 border border-blue-500/30'
+                                        }`}>
+                                        {msg.content}
                                     </div>
-
-                                    <div className="space-y-3">
-                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Game Directive</label>
-                                        <div className="relative">
-                                            <textarea
-                                                value={description}
-                                                onChange={(e) => setDescription(e.target.value)}
-                                                placeholder="// Describe your game vision...\n// E.g. Cyberpunk platformer with time-manipulation mechanics"
-                                                className="w-full h-56 bg-black/40 border border-white/5 rounded-2xl p-6 text-sm font-mono text-gray-300 placeholder-gray-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/10 transition-all resize-none shadow-inner"
-                                            />
-                                            <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 font-mono pointer-events-none">
-                                                {description.length} chars
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={handleSubmit}
-                                        disabled={!description.trim() || isGenerating}
-                                        className={`w-full py-5 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-3 relative overflow-hidden ${isGenerating
-                                            ? 'bg-neutral-800 text-gray-400 cursor-not-allowed border border-white/5'
-                                            : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] hover:shadow-purple-500/20'
-                                            }`}
-                                    >
-                                        {isGenerating && (
-                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
-                                        )}
-                                        {isGenerating ? (
-                                            <>
-                                                <div className="w-5 h-5 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
-                                                <span className="font-mono text-sm">INITIALIZING...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span className="text-lg">🚀 INITIALIZE ENGINE</span>
-                                            </>
-                                        )}
-                                    </button>
-
-                                    {error && (
-                                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                                            <p className="text-red-400 font-mono text-sm">{error}</p>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
+                            ))}
                         </div>
-                    </motion.div>
-                ) : (
-                    // ========== STUDIO LAYOUT (30% / 70%) ==========
-                    <motion.div
-                        key="studio"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4 }}
-                        className="h-full grid grid-cols-12 gap-4 p-4"
-                    >
-                        {/* LEFT SIDEBAR: Studio Controls (30%) */}
-                        <motion.div
-                            initial={{ x: -100, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.2, duration: 0.4 }}
-                            className="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full"
-                        >
-                            {/* Chat Input */}
-                            <div className="bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-4 border border-white/5 shadow-xl">
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-wider font-bold">
-                                        <span>💬</span>
-                                        <span>Evolution Prompt</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={description}
-                                            onChange={(e) => setDescription(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
-                                            placeholder="How should we evolve the game?"
-                                            className="flex-1 bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
-                                        />
-                                        <button
-                                            onClick={handleSubmit}
-                                            disabled={!description.trim() || isGenerating}
-                                            className="px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg font-bold transition-all hover:scale-105 active:scale-95"
-                                        >
-                                            {isGenerating ? '⏳' : '✨'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Mod Controls */}
-                            {gameData?.modSchema && gameData.modSchema.length > 0 && (
-                                <div className="flex-1 bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-4 border border-white/5 shadow-xl overflow-y-auto">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                            <span>⚙️</span>
-                                            <span>Live Parameters</span>
-                                        </h3>
-                                        <span className="px-2 py-1 text-[9px] font-mono tracking-widest uppercase text-green-300 bg-green-500/10 rounded-full border border-green-500/20">Active</span>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {gameData.modSchema.map((item) => (
-                                            <div key={item.key} className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <span className="text-gray-400 font-medium">{item.label}</span>
-                                                    <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded text-[10px]">
-                                                        {typeof modValues[item.key] === 'number'
-                                                            ? modValues[item.key].toFixed(1)
-                                                            : String(modValues[item.key])}
-                                                    </span>
-                                                </div>
-
-                                                {item.type === 'range' && (
-                                                    <input
-                                                        type="range"
-                                                        min={item.min}
-                                                        max={item.max}
-                                                        step={item.step}
-                                                        value={modValues[item.key] || item.defaultValue}
-                                                        onChange={(e) => handleModChange(item.key, parseFloat(e.target.value))}
-                                                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500 hover:accent-purple-400 transition-colors"
-                                                    />
-                                                )}
-
-                                                {item.type === 'color' && (
-                                                    <input
-                                                        type="color"
-                                                        value={modValues[item.key] || item.defaultValue}
-                                                        onChange={(e) => handleModChange(item.key, e.target.value)}
-                                                        className="w-full h-10 rounded-lg cursor-pointer border border-white/10"
-                                                    />
-                                                )}
-
-                                                {item.type === 'boolean' && (
-                                                    <button
-                                                        onClick={() => handleModChange(item.key, !modValues[item.key])}
-                                                        className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
-                                                                ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30'
-                                                                : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
-                                                            }`}
-                                                    >
-                                                        {modValues[item.key] ? '✓ ENABLED' : '✗ DISABLED'}
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Deploy Button */}
-                            <button
-                                onClick={handleMint}
-                                disabled={!isConnected || isMinting || isConfirming}
-                                className="w-full py-4 bg-white hover:bg-gray-100 disabled:bg-gray-700 disabled:cursor-not-allowed text-black disabled:text-gray-400 rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
-                            >
-                                {isMinting || isConfirming ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-black rounded-full animate-spin"></div>
-                                        <span>Deploying...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>🚀</span>
-                                        <span>Deploy to Chain</span>
-                                    </>
-                                )}
-                            </button>
-                        </motion.div>
-
-                        {/* RIGHT PANEL: Live Preview (70%) */}
-                        <motion.div
-                            initial={{ x: 100, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.3, duration: 0.4 }}
-                            className="col-span-12 lg:col-span-8 h-full"
-                        >
-                            <div className="h-full bg-[#050505] rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative">
-                                <GamePlayer
-                                    key={gameData.gameCode.slice(0, 100)}
-                                    gameData={gameData}
-                                    isInline={true}
-                                />
-                            </div>
-                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ERROR BANNER */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="absolute top-20 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-full px-4"
+                    >
+                        <div className="bg-red-500/20 backdrop-blur-xl border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+                            <span className="text-red-400 text-xl">⚠️</span>
+                            <div className="flex-1">
+                                <p className="text-red-200 text-sm font-mono">{error}</p>
+                                <p className="text-red-300/60 text-xs mt-1">Check server console for details</p>
+                            </div>
+                            <button
+                                onClick={() => setError(null)}
+                                className="text-red-400 hover:text-red-300"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* MAIN CONTENT AREA */}
+            <div className="h-full w-full flex items-center justify-center">
+                {!gameData ? (
+                    // EMPTY STATE
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-center space-y-6 px-4"
+                    >
+                        <div className="text-8xl font-thin tracking-tighter text-white/20">
+                            GAME<span className="font-bold text-purple-500/40">OS</span>
+                        </div>
+                        <p className="text-gray-500 font-mono text-sm tracking-wider">
+                            Describe your game below
+                        </p>
+                    </motion.div>
+                ) : (
+                    // GAME PREVIEW
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full h-full"
+                    >
+                        <GamePlayer
+                            key={gameData.gameCode.slice(0, 100)}
+                            gameData={gameData}
+                            isInline={true}
+                        />
+                    </motion.div>
+                )}
+            </div>
+
+            {/* CONFIGURE PANEL (Sliding from right) */}
+            <AnimatePresence>
+                {showConfigPanel && gameData?.modSchema && (
+                    <motion.div
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="absolute right-0 top-0 h-full w-80 bg-black/90 backdrop-blur-xl border-l border-white/10 shadow-2xl z-40 overflow-y-auto"
+                    >
+                        <div className="p-6 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-white">Configure</h3>
+                                <button
+                                    onClick={() => setShowConfigPanel(false)}
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {gameData.modSchema.map((item) => (
+                                    <div key={item.key} className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="text-gray-400 font-medium">{item.label}</span>
+                                            <span className="text-white font-mono bg-white/5 px-2 py-0.5 rounded">
+                                                {typeof modValues[item.key] === 'number'
+                                                    ? modValues[item.key].toFixed(1)
+                                                    : String(modValues[item.key])}
+                                            </span>
+                                        </div>
+
+                                        {item.type === 'range' && (
+                                            <input
+                                                type="range"
+                                                min={item.min}
+                                                max={item.max}
+                                                step={item.step}
+                                                value={modValues[item.key] || item.defaultValue}
+                                                onChange={(e) => handleModChange(item.key, parseFloat(e.target.value))}
+                                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                            />
+                                        )}
+
+                                        {item.type === 'color' && (
+                                            <input
+                                                type="color"
+                                                value={modValues[item.key] || item.defaultValue}
+                                                onChange={(e) => handleModChange(item.key, e.target.value)}
+                                                className="w-full h-10 rounded-lg cursor-pointer"
+                                            />
+                                        )}
+
+                                        {item.type === 'boolean' && (
+                                            <button
+                                                onClick={() => handleModChange(item.key, !modValues[item.key])}
+                                                className={`w-full py-2 rounded-lg border font-medium text-sm transition-all ${modValues[item.key]
+                                                        ? 'bg-green-500/20 border-green-500 text-green-400'
+                                                        : 'bg-red-500/20 border-red-500 text-red-400'
+                                                    }`}
+                                            >
+                                                {modValues[item.key] ? '✓ ON' : '✗ OFF'}
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={handleMint}
+                                disabled={!isConnected || isMinting || isConfirming}
+                                className="w-full py-3 bg-white hover:bg-gray-100 disabled:bg-gray-700 text-black disabled:text-gray-400 rounded-lg font-bold transition-all"
+                            >
+                                {isMinting || isConfirming ? 'Deploying...' : '🚀 Deploy to Chain'}
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* BOTTOM INPUT BAR (Ohara Style) */}
+            <div className="absolute bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+                <div className="max-w-4xl mx-auto">
+                    <form onSubmit={handleSubmit} className="flex items-center gap-3">
+                        {/* Configure Button (only show when game exists) */}
+                        {gameData?.modSchema && gameData.modSchema.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setShowConfigPanel(!showConfigPanel)}
+                                className="px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all"
+                                title="Configure parameters"
+                            >
+                                ⚙️
+                            </button>
+                        )}
+
+                        {/* Input Field */}
+                        <div className="flex-1 relative">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder={gameData ? "Evolve your game..." : "Describe your dream game..."}
+                                disabled={isGenerating}
+                                className="w-full px-6 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl text-white placeholder-gray-500 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50"
+                            />
+                            {isGenerating && (
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                    <div className="w-5 h-5 border-2 border-gray-400 border-t-white rounded-full animate-spin"></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Build Button */}
+                        <button
+                            type="submit"
+                            disabled={!input.trim() || isGenerating}
+                            className="px-8 py-4 bg-white hover:bg-gray-100 disabled:bg-gray-700 disabled:cursor-not-allowed text-black disabled:text-gray-400 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 disabled:hover:scale-100"
+                        >
+                            {isGenerating ? '...' : gameData ? '✨ Evolve' : '🚀 Build'}
+                        </button>
+                    </form>
+
+                    {/* Hint Text */}
+                    <p className="text-center text-gray-600 text-xs mt-3 font-mono">
+                        Press Enter to {gameData ? 'evolve' : 'build'} • {gameData?.modSchema?.length || 0} parameters available
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }

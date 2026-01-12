@@ -468,13 +468,37 @@ export async function POST(request: NextRequest) {
 
         console.log('\n🎉 SUCCESS - Returning AI-generated game');
         console.log('========================================\n');
-        return NextResponse.json({ success: true, gameData, isMock: false });
+        return NextResponse.json({
+            success: true,
+            gameData,
+            isMock: false,
+            apiStatus: 'connected'
+        });
     } catch (error) {
         console.error('\n💥 FATAL ERROR - Falling back to Mock Mode');
         console.error('  - Error Type:', error instanceof Error ? error.constructor.name : typeof error);
         console.error('  - Error Message:', error instanceof Error ? error.message : String(error));
         console.error('  - Stack:', error instanceof Error ? error.stack : 'N/A');
         console.log('========================================\n');
+
+        // Extract detailed error info
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        let errorCode = 'UNKNOWN';
+        let errorHint = 'Check server console for details';
+
+        if (errorMessage.includes('401')) {
+            errorCode = '401 UNAUTHORIZED';
+            errorHint = 'API key is invalid or expired. Check https://openrouter.ai/keys';
+        } else if (errorMessage.includes('402')) {
+            errorCode = '402 PAYMENT REQUIRED';
+            errorHint = 'Insufficient credits. Add credits at https://openrouter.ai/credits';
+        } else if (errorMessage.includes('429')) {
+            errorCode = '429 RATE LIMIT';
+            errorHint = 'Too many requests. Wait a moment and try again';
+        } else if (errorMessage.includes('API Key configuration missing')) {
+            errorCode = 'NO API KEY';
+            errorHint = 'Set OPENROUTER_API_KEY in .env.local';
+        }
 
         let genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong' = 'Shooter';
         const desc = description.toLowerCase();
@@ -488,8 +512,9 @@ export async function POST(request: NextRequest) {
             success: true,
             gameData: mockGame,
             isMock: true,
-            error: error instanceof Error ? error.message : String(error),
-            note: "Using Dynamic Mock due to API Error - Check server console for details"
+            error: `${errorCode}: ${errorHint}`,
+            errorDetails: errorMessage,
+            note: "Using simulation mode - Check server console for full details"
         });
     }
 }
