@@ -35,6 +35,14 @@ interface GameData {
     gameCode: string;
 }
 
+interface EvolutionStep {
+    id: string;
+    timestamp: number;
+    userCommand: string;
+    aiResponse?: string;
+    success: boolean;
+}
+
 export function GameDescriptionForm() {
     const { isConnected } = useAccount();
 
@@ -46,6 +54,7 @@ export function GameDescriptionForm() {
     const [gameData, setGameData] = useState<GameData | null>(null);
     const [modValues, setModValues] = useState<Record<string, any>>({});
     const [connections, setConnections] = useState<Record<string, boolean>>({});
+    const [evolutionHistory, setEvolutionHistory] = useState<EvolutionStep[]>([]);
 
     // Loading states
     const [isGenerating, setIsGenerating] = useState(false);
@@ -124,12 +133,39 @@ export function GameDescriptionForm() {
     const handleEvolve = async (instruction: string) => {
         if (!gameData) return;
 
+        const stepId = Date.now().toString();
+
+        // Add user command to history
+        setEvolutionHistory(prev => [...prev, {
+            id: stepId,
+            timestamp: Date.now(),
+            userCommand: instruction,
+            success: false
+        }]);
+
         setIsEvolving(true);
 
         try {
             const game = await generateGame(instruction, gameData);
             setGameData(game);
+
+            // Update history with success
+            setEvolutionHistory(prev => prev.map(step =>
+                step.id === stepId
+                    ? { ...step, success: true, aiResponse: 'Game updated successfully' }
+                    : step
+            ));
+
             toast.success('✨ Game evolved!');
+        } catch (error) {
+            // Update history with error
+            setEvolutionHistory(prev => prev.map(step =>
+                step.id === stepId
+                    ? { ...step, success: false, aiResponse: error instanceof Error ? error.message : 'Failed to evolve' }
+                    : step
+            ));
+
+            toast.error('Failed to evolve game');
         } finally {
             setIsEvolving(false);
         }
@@ -217,6 +253,7 @@ export function GameDescriptionForm() {
                             onNext={handleCustomizeComplete}
                             onEvolve={handleEvolve}
                             isEvolving={isEvolving}
+                            evolutionHistory={evolutionHistory}
                         />
                     )}
 
