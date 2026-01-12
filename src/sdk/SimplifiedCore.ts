@@ -1,14 +1,14 @@
 /**
  * Game Factory SDK - Simplified Core
- * Minimal API for game development with Remix support
+ * Minimal API for game development with Mod support
  */
 
-type RemixVariables = Record<string, any>;
+type ModVariables = Record<string, any>;
 
 class GameFactorySDK {
     private static instance: GameFactorySDK;
-    private vars: RemixVariables = {};
-    private updateCallback: (newVars: RemixVariables) => void = () => { };
+    private vars: ModVariables = {};
+    private updateCallback: (newVars: ModVariables) => void = () => { };
     private score: number = 0;
     private isReady: boolean = false;
 
@@ -24,20 +24,20 @@ class GameFactorySDK {
     }
 
     /**
-     * 1. REGISTER REMIX VARIABLES
-     * Define what can be modded in your game
+     * 1. REGISTER MOD VARIABLES
+     * Define which variables can be modified by the platform
      */
-    public registerRemix(defaultVars: RemixVariables): void {
+    public registerMods(defaultVars: ModVariables): void {
         this.vars = defaultVars;
         this.sendMessage("REGISTER_SCHEMA", defaultVars);
-        console.log('[SDK] Remix variables registered:', defaultVars);
+        console.log('[SDK] Mod variables registered:', defaultVars);
     }
 
     /**
-     * 2. LISTEN FOR REAL-TIME UPDATES
-     * Called when platform changes a variable
+     * 2. LISTEN FOR MOD UPDATES
+     * Subscribe to variable changes from the platform
      */
-    public onRemixUpdate(callback: (newVars: RemixVariables) => void): void {
+    public onModUpdate(callback: (newVars: ModVariables) => void): void {
         this.updateCallback = callback;
     }
 
@@ -51,7 +51,7 @@ class GameFactorySDK {
     /**
      * 4. GET ALL VARIABLES
      */
-    public getAllVars(): RemixVariables {
+    public getAllVars(): ModVariables {
         return { ...this.vars };
     }
 
@@ -134,11 +134,11 @@ class GameFactorySDK {
             const { type, payload } = event.data || {};
 
             switch (type) {
-                case "UPDATE_REMIX":
-                    // Platform changed a variable
+                case "UPDATE_MODS":
+                    // Platform is updating variables
                     this.vars = { ...this.vars, ...payload };
                     this.updateCallback(this.vars);
-                    console.log('[SDK] Remix updated:', payload);
+                    console.log('[SDK] Mods updated:', payload);
                     break;
 
                 case "REQUEST_STATE":
@@ -171,4 +171,4 @@ export const sdk = GameFactorySDK.getInstance();
 
 // Also export class for type checking
 export { GameFactorySDK };
-export type { RemixVariables };
+export type { ModVariables };

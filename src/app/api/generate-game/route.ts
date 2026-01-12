@@ -14,10 +14,10 @@ JSON Formatı:
   "visualStyle": "Görsel stil (Cyberpunk, Pixel Art, Low Poly, vb.)",
   "startingScene": "Oyunun başlangıç sahnesinin atmosferik betimlemesi",
   "playerActions": ["Saldır", "Kaç", "Keşfet" gibi oyunun başlangıcında yapılabilecek 3 eylem],
-  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU SDK ENTEGRASYONU: Oyun kodunun EN BAŞINDA (setup fonksiyonunun içinde) MUTLAKA şu satırları ekle: SDK.registerRemix({ playerSpeed: 5, gravity: 0.8, jumpPower: 10 }); ve SDK.onRemixUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; jumpPower = vars.jumpPower; }); Ardından SDK.gameReady(); ve SDK.gameStart(); çağır. Oyun bittiğinde SDK.gameEnd(score); kullan. Skor güncellemek için SDK.submitScore(score) veya SDK.addScore(10) kullan. ÖRNEK KOD YAPISI: let playerSpeed = 5; let gravity = 0.8; let score = 0; function setup() { createCanvas(windowWidth, windowHeight); SDK.registerRemix({ playerSpeed: 5, gravity: 0.8 }); SDK.onRemixUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; }); SDK.gameReady(); SDK.gameStart(); } function draw() { background(0); /* oyun mantığı */ SDK.submitScore(score); } function keyPressed() { if (key === 'q') SDK.gameEnd(score); } - Sadece saf JavaScript kodu yaz, HTML tagları OLMASIN. Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap."
+  "gameCode": "TAM OYNANABILIR p5.js KODU - ZORUNLU SDK ENTEGRASYONU: Oyun kodunun EN BAŞINDA (setup fonksiyonunun içinde) MUTLAKA şu satırları ekle: SDK.registerMods({ playerSpeed: 5, gravity: 0.8, jumpPower: 10 }); ve SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; jumpPower = vars.jumpPower; }); Ardından SDK.gameReady(); ve SDK.gameStart(); çağır. Oyun bittiğinde SDK.gameEnd(score); kullan. Skor güncellemek için SDK.submitScore(score) veya SDK.addScore(10) kullan. ÖRNEK KOD YAPISI: let playerSpeed = 5; let gravity = 0.8; let score = 0; function setup() { createCanvas(windowWidth, windowHeight); SDK.registerMods({ playerSpeed: 5, gravity: 0.8 }); SDK.onModUpdate((vars) => { playerSpeed = vars.playerSpeed; gravity = vars.gravity; }); SDK.gameReady(); SDK.gameStart(); } function draw() { background(0); /* oyun mantığı */ SDK.submitScore(score); } function keyPressed() { if (key === 'q') SDK.gameEnd(score); } - Sadece saf JavaScript kodu yaz, HTML tagları OLMASIN. Canvas boyutunu createCanvas(windowWidth, windowHeight) ile responsive yap."
 }
 
-KRİTİK: gameCode içinde SDK.registerRemix() çağrısı ZORUNLUDUR! Bu olmadan oyun çalışmaz. SADECE geçerli JSON döndür, başka hiçbir açıklama veya metin ekleme.`;
+KRİTİK: gameCode içinde SDK.registerMods() çağrısı ZORUNLUDUR! Bu olmadan oyun çalışmaz. SADECE geçerli JSON döndür, başka hiçbir açıklama veya metin ekleme.`;
 
 // --- DYNAMIC MOCK GENERATOR (SDK UYUMLU VERSİYON) ---
 function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake' | 'Pong', description: string) {
@@ -31,19 +31,18 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
     // ORTAK DEĞİŞKENLER VE SETUP BAŞLANGICI
     const commonVars = `let score=0, gameState='PLAY';`;
 
-    // SDK ENTEGRASYON ŞABLONU
-    // Bu fonksiyon her oyunun setup() kısmına enjekte edilecek
-    const sdkSetup = (remixVars: string, updateLogic: string) => `
-        // 1. SDK İLE KONUŞ: Varsayılan ayarları bildir
+    // SDK INTEGRATION TEMPLATE
+    const sdkSetup = (modVars: string, updateLogic: string) => `
+        // 1. NOTIFY SDK: Register default settings
         if(window.SDK) {
-            window.SDK.registerRemix({ ${remixVars} });
+            window.SDK.registerMods({ ${modVars} });
             
-            // 2. DİNLE: Slider oynayınca burası çalışsın
-            window.SDK.onRemixUpdate((vars) => {
+            // 2. LISTEN: Update when slider changes
+            window.SDK.onModUpdate((vars) => {
                 ${updateLogic}
             });
             
-            // 3. HAZIRIM: Yükleme ekranını kaldır
+            // 3. READY: Remove loading screen
             window.SDK.gameReady();
             window.SDK.gameStart();
         }
@@ -53,7 +52,7 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
     const submitLogic = `if(window.SDK) window.SDK.submitScore(score);`;
 
     if (genre === 'Snake') {
-        const remixVars = `speed: 15, snakeColor: '#00ff00'`;
+        const modVars = `speed: 15, snakeColor: '#00ff00'`;
         const updateLogic = `frameRate(vars.speed); playerColor = color(vars.snakeColor);`;
 
         return {
@@ -77,7 +76,7 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
                     s = new Snake();
                     pickLocation();
                     
-                    ${sdkSetup(remixVars, updateLogic)}
+                    ${sdkSetup(modVars, updateLogic)}
                 }
                 
                 function pickLocation(){
@@ -125,7 +124,7 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
             `
         };
     } else if (genre === 'Pong') {
-        const remixVars = `ballSpeed: 7, paddleHeight: 100, aiDifficulty: 0.08`;
+        const modVars = `ballSpeed: 7, paddleHeight: 100, aiDifficulty: 0.08`;
         const updateLogic = `b.sp = vars.ballSpeed; lp.h = vars.paddleHeight; rp.h = vars.paddleHeight; aiSpeed = vars.aiDifficulty;`;
 
         return {
@@ -150,7 +149,7 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
                     b.x=width/2; b.y=height/2; b.a=random(TWO_PI);
                     rectMode(CENTER);
                     
-                    ${sdkSetup(remixVars, updateLogic)}
+                    ${sdkSetup(modVars, updateLogic)}
                 }
                 
                 function draw(){
@@ -186,7 +185,7 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
         };
     } else {
         // DEFAULT: PLATFORMER (En yaygın)
-        const remixVars = `playerSpeed: 5, gravity: 0.6, jumpForce: 12, themeColor: '#00ccff'`;
+        const modVars = `playerSpeed: 5, gravity: 0.6, jumpForce: 12, themeColor: '#00ccff'`;
         const updateLogic = `
             playerSpeed = vars.playerSpeed; 
             grav = vars.gravity; 
@@ -216,7 +215,7 @@ function generateMockGame(genre: 'Platformer' | 'Shooter' | 'Collector' | 'Snake
                     
                     for(let i=0;i<6;i++) plats.push({x:i*150,y:100+i*80,w:100,h:20});
                     
-                    ${sdkSetup(remixVars, updateLogic)}
+                    ${sdkSetup(modVars, updateLogic)}
                 }
                 
                 function draw(){

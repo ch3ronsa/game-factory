@@ -33,8 +33,8 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
     const [energy, setEnergy] = useState(100);
     const [mETH, setmETH] = useState(0);
 
-    // REMIX DEĞİŞKENLERİ
-    const [remixVars, setRemixVars] = useState<Record<string, any>>({});
+    // MOD VARIABLES
+    const [modVars, setModVars] = useState<Record<string, any>>({});
 
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -61,12 +61,8 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
 
             // A. Oyun "Benim ayarlarım bunlar" dediğinde:
             if (type === 'REGISTER_SCHEMA') {
-                console.log(
-                    '%c✅ REGISTER_SCHEMA Alındı! Remix UI Oluşturuluyor...',
-                    'background: #ff00ff; color: #fff; font-size: 16px; font-weight: bold; padding: 8px;',
-                    payload
-                );
-                setRemixVars(payload);
+                console.log('✅ UI: Mod Settings Received:', payload);
+                setModVars(payload); // Slider'ları oluşturmak için state'i güncelle
             }
 
             // B. Oyun "Skor değişti" dediğinde:
@@ -88,18 +84,15 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
         };
     }, []);
 
-    // 2. GÖNDERİCİ - SLIDER OYNAYINCA OYUNA HABER VER
-    const handleRemixChange = (key: string, value: any) => {
-        setRemixVars(prev => ({ ...prev, [key]: value }));
+    // 2. SENDER - SLIDER CHANGED, NOTIFY GAME
+    const handleModChange = (key: string, value: any) => {
+        // 1. Update UI
+        setModVars(prev => ({ ...prev, [key]: value }));
 
+        // 2. Send postMessage to game (Iframe)
         if (iframeRef.current && iframeRef.current.contentWindow) {
-            console.log(
-                '%c📤 Parent -> Iframe: UPDATE_REMIX Gönderiliyor',
-                'background: #ffaa00; color: #000; font-weight: bold; padding: 4px;',
-                { key, value }
-            );
             iframeRef.current.contentWindow.postMessage({
-                type: 'UPDATE_REMIX',
+                type: 'UPDATE_MODS',
                 payload: { [key]: value }
             }, '*');
         }
@@ -142,27 +135,14 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
             }
 
             // 🔍 DEBUG NOKTA 2: TETİKLEME ANI
-            registerRemix(defaultVars) {
-                console.log(
-                    '%c🎯 DEBUG 2: TETİKLEME ANI - registerRemix() ÇAĞRILDI!',
-                    'background: #ffff00; color: #000; font-size: 16px; font-weight: bold; padding: 8px;',
-                    'Gelen Değişkenler:', defaultVars
-                );
-                
+            // GAME CALLS THIS TO NOTIFY PARENT
+            registerMods(defaultVars) {
                 this.vars = defaultVars;
-                
-                // 🔍 DEBUG NOKTA 3: POSTACI ANI (sendMessage içinde)
+                // IMPORTANT: Parent (React) expects this as 'REGISTER_SCHEMA'
                 this.sendMessage("REGISTER_SCHEMA", defaultVars); 
-                
-                console.log(
-                    '%c✅ registerRemix Tamamlandı - Değişkenler Kaydedildi',
-                    'background: #00ff00; color: #000; font-weight: bold; padding: 4px;',
-                    'this.vars:', this.vars
-                );
             }
 
-            onRemixUpdate(callback) {
-                console.log('%c📡 onRemixUpdate Callback Kaydedildi', 'color: #0ff;');
+            onModUpdate(callback) {
                 this.updateCallback = callback;
             }
 
@@ -230,13 +210,8 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                 console.log('%c🎧 SDK: Message Listener Kuruldu (iframe içinde)', 'color: #0ff;');
                 window.addEventListener("message", (event) => {
                     const { type, payload } = event.data || {};
-                    
-                    if (type === "UPDATE_REMIX") {
-                        console.log(
-                            '%c📥 Iframe: UPDATE_REMIX Alındı!',
-                            'background: #00ffff; color: #000; font-weight: bold; padding: 4px;',
-                            payload
-                        );
+                    // REACT SENDS UPDATE_MODS
+                    if (type === "UPDATE_MODS") {
                         this.vars = { ...this.vars, ...payload };
                         this.updateCallback(this.vars);
                     }
@@ -251,7 +226,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
             '%c🎉 DEBUG 1 FINAL: window.SDK Atandı!',
             'background: #00ff00; color: #000; font-size: 16px; font-weight: bold; padding: 8px;',
             'window.SDK:', window.SDK,
-            '\\n✅ registerRemix fonksiyonu mevcut mu?', typeof window.SDK.registerRemix === 'function'
+            '\\n✅ registerRemix fonksiyonu mevcut mu?', typeof window.SDK.registerMods === 'function'
         );
     </script>
     <script>
@@ -276,20 +251,20 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
             <div className="absolute top-4 right-4 z-50 bg-red-900/90 border-2 border-red-500 rounded-lg p-3 text-white text-xs font-mono max-w-xs">
                 <div className="font-bold text-yellow-300 mb-2">🔍 DEBUG MODE ACTIVE</div>
                 <div className="text-[10px] space-y-1">
-                    <div>✅ Remix Vars: {Object.keys(remixVars).length}</div>
+                    <div>✅ Mod Vars: {Object.keys(modVars).length}</div>
                     <div>📊 Score: {score}</div>
                     <div className="text-yellow-200 mt-2">Console'u açın! (F12)</div>
                 </div>
             </div>
 
-            {/* REMIX KONTROLLERİ */}
-            {Object.keys(remixVars).length > 0 && (
+            {/* MOD CONTROLS PANEL */}
+            {Object.keys(modVars).length > 0 && (
                 <div className="absolute top-4 left-4 z-40 bg-black/80 backdrop-blur border border-purple-500/30 rounded-xl p-4 w-64 shadow-2xl">
                     <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <span>⚛️</span> Remix Console
+                        <span>⚙️</span> Mod Console
                     </h3>
                     <div className="space-y-3">
-                        {Object.entries(remixVars).map(([key, value]) => (
+                        {Object.entries(modVars).map(([key, value]) => (
                             <div key={key} className="space-y-1">
                                 <div className="flex justify-between text-[10px] text-gray-400 font-mono">
                                     <span>{key}</span>
@@ -302,12 +277,12 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                                         max={value > 10 ? 100 : 20}
                                         step={0.1}
                                         value={value}
-                                        onChange={(e) => handleRemixChange(key, parseFloat(e.target.value))}
+                                        onChange={(e) => handleModChange(key, parseFloat(e.target.value))}
                                         className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
                                     />
                                 ) : typeof value === 'boolean' ? (
                                     <button
-                                        onClick={() => handleRemixChange(key, !value)}
+                                        onClick={() => handleModChange(key, !value)}
                                         className={`w-full py-1 text-xs rounded border ${value ? 'bg-green-500/20 border-green-500 text-green-400' : 'bg-red-500/20 border-red-500 text-red-400'}`}
                                     >
                                         {value ? 'ENABLED' : 'DISABLED'}
@@ -316,7 +291,7 @@ export function GamePlayer({ gameData, onClose, isInline = false }: GamePlayerPr
                                     <input
                                         type="color"
                                         value={value}
-                                        onChange={(e) => handleRemixChange(key, e.target.value)}
+                                        onChange={(e) => handleModChange(key, e.target.value)}
                                         className="w-full h-6 rounded cursor-pointer"
                                     />
                                 )}
